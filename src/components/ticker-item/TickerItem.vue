@@ -18,7 +18,11 @@ const parseTickerValue = computed(() => {
     return '';
   }
 
-  return props.ticker.value.toFixed(2);
+  if (props.ticker.rate >= 10) {
+    return props.ticker.rate.toFixed(2);
+  }
+
+  return props.ticker.rate.toPrecision(2);
 });
 
 const store = useTickerStore();

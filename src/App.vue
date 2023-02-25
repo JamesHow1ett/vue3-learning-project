@@ -1,14 +1,27 @@
 <script setup>
+import { ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useTickerStore } from './stores/tickers';
 import AnimatedSpinner from './components/animated-spinner/AnimatedSpinner.vue';
 import TickerItem from './components/ticker-item/TickerItem.vue';
+
+const tickerInput = ref('');
 
 const store = useTickerStore();
 const { tickers, loading, currentTicker } = storeToRefs(store);
 
 function removeTicker(tickerName) {
   store.removeTicker(tickerName);
+}
+
+function addNewTicker() {
+  if (!tickerInput.value) {
+    return;
+  }
+
+  store.fetchTikersData(tickerInput.value);
+
+  tickerInput.value = '';
 }
 </script>
 
@@ -21,6 +34,7 @@ function removeTicker(tickerName) {
             <label for="wallet" class="block text-sm font-medium text-gray-700">Ticker</label>
             <div class="mt-1 relative rounded-md shadow-md">
               <input
+                v-model="tickerInput"
                 type="text"
                 name="wallet"
                 id="wallet"
@@ -54,8 +68,10 @@ function removeTicker(tickerName) {
           </div>
         </div>
         <button
+          :disabled="!tickerInput"
           type="button"
-          class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-25"
+          @click="addNewTicker"
         >
           <svg
             class="-ml-0.5 mr-2 h-6 w-6"
@@ -73,16 +89,18 @@ function removeTicker(tickerName) {
         </button>
       </section>
 
-      <hr class="w-full border-t border-gray-600 my-4" />
-      <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
-        <ticker-item
-          v-for="ticker in tickers"
-          :key="ticker.name"
-          :ticker="ticker"
-          @remove-ticker="removeTicker"
-        />
-      </dl>
-      <hr class="w-full border-t border-gray-600 my-4" />
+      <template v-if="tickers.length">
+        <hr class="w-full border-t border-gray-600 my-4" />
+        <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <ticker-item
+            v-for="ticker in tickers"
+            :key="ticker.name"
+            :ticker="ticker"
+            @remove-ticker="removeTicker"
+          />
+        </dl>
+        <hr class="w-full border-t border-gray-600 my-4" />
+      </template>
       <!-- BarChart will be here -->
     </div>
   </div>
