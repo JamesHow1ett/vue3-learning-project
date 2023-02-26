@@ -2,10 +2,13 @@
 import { ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useTickerStore } from './stores/tickers';
+import { TIMER_DELAY } from './utils/constants';
 
 import AnimatedSpinner from './components/animated-spinner/AnimatedSpinner.vue';
 import TickerItem from './components/ticker-item/TickerItem.vue';
 import BarChart from './components/bar-chart/BarChart.vue';
+
+const { THREE_SECONDS, FIVE_SECONDS } = TIMER_DELAY;
 
 let intervalUpdateGraph;
 let intervalUpdateTickersData;
@@ -26,7 +29,7 @@ watch(tickers, (newValue, oldValue) => {
 
     intervalUpdateTickersData = setInterval(() => {
       store.updateTickersData();
-    }, 5000);
+    }, FIVE_SECONDS);
   }
 });
 
@@ -38,7 +41,7 @@ watch(currentTicker, (value) => {
 
   intervalUpdateGraph = setInterval(() => {
     store.graphPrices();
-  }, 3000);
+  }, THREE_SECONDS);
 });
 
 watch(

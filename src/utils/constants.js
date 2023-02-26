@@ -1,0 +1,4 @@
+export const TIMER_DELAY = {
+  THREE_SECONDS: 1000,
+  FIVE_SECONDS: 5000,
+};
