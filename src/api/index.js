@@ -51,3 +51,25 @@ export async function fetchSingleTickePrices(tickerName) {
 
   return result;
 }
+
+/**
+ * Fetch all available coins
+ * @returns {Promise<{
+ *  Data: {
+ *  [tickerName: string]: {
+ *    Symbol: string;
+ *    FullName: string;
+ *    ImageUrl: string;
+ *    };
+ *  }
+ * }>}
+ */
+export async function fetchAvailableCoinList() {
+  const url = new URL(`${BASE_URL_REST}/all/coinlist`);
+  url.searchParams.append('summary', true);
+  url.searchParams.append('api_key', API_KEY);
+
+  const result = await fetchData(url);
+
+  return result;
+}

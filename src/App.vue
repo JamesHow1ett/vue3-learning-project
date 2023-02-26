@@ -1,8 +1,9 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useTickerStore } from './stores/tickers';
 import { TIMER_DELAY } from './utils/constants';
+import { defaultTypeSuggestions } from './stores/constants';
 
 import AnimatedSpinner from './components/animated-spinner/AnimatedSpinner.vue';
 import TickerItem from './components/ticker-item/TickerItem.vue';
@@ -14,9 +15,14 @@ let intervalUpdateGraph;
 let intervalUpdateTickersData;
 const tickerInput = ref('');
 const errorIsTickerAdded = ref(false);
+const typeSuggestions = ref(defaultTypeSuggestions);
 
 const store = useTickerStore();
-const { tickers, loading, currentTicker } = storeToRefs(store);
+const { allCoins, tickers, loading, currentTicker } = storeToRefs(store);
+
+onMounted(async () => {
+  await store.fetchAllCoinsList();
+});
 
 watch(tickers, (newValue, oldValue) => {
   if (!newValue.length) {
@@ -47,9 +53,37 @@ watch(currentTicker, (value) => {
 watch(
   () => tickerInput.value,
   (tickerName) => {
-    const addedTicker = store.getTickerByName(tickerName);
-
+    const addedTicker = store.getTickerByName(tickerName.toUpperCase());
     errorIsTickerAdded.value = !!addedTicker;
+
+    const allSuggestions = [];
+
+    Object.values(allCoins.value).forEach((coin) => {
+      if (coin.Symbol === tickerName.toUpperCase()) {
+        allSuggestions.push(coin);
+        return;
+      }
+
+      const finded =
+        coin.Symbol.includes(tickerName.toUpperCase()) || coin.FullName.includes(tickerName);
+
+      if (finded) {
+        allSuggestions.push(coin);
+      }
+    });
+
+    const exactMatch = allSuggestions.find((coin) => coin.Symbol === tickerName.toUpperCase());
+    let suggestionList = [];
+
+    if (exactMatch) {
+      suggestionList = [exactMatch, ...allSuggestions.slice(0, 3)];
+    } else {
+      suggestionList = [...allSuggestions.slice(0, 4)];
+    }
+
+    typeSuggestions.value = suggestionList.map((coin) => ({
+      tickerName: coin.Symbol,
+    }));
   }
 );
 
@@ -64,6 +98,11 @@ function addNewTicker() {
 
   store.fetchTikersData(tickerInput.value);
 
+  tickerInput.value = '';
+}
+
+function addFromSuggestion(tickerName) {
+  store.fetchTikersData(tickerName);
   tickerInput.value = '';
 }
 
@@ -85,6 +124,8 @@ function selectTicker(tickerName) {
 </script>
 
 <template>
+  <animated-spinner v-if="loading" />
+
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
     <div class="container">
       <section>
@@ -102,28 +143,24 @@ function selectTicker(tickerName) {
                 @keyup.enter="addNewTicker"
               />
             </div>
-            <!-- <div class="flex bg-white shadow-md p-1 rounded-md flex-wrap">
+            <div
+              v-if="typeSuggestions.length"
+              class="flex bg-white shadow-md p-1 rounded-md flex-wrap"
+            >
               <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
+                v-for="suggestion in typeSuggestions"
+                :key="suggestion.tickerName"
+                :class="{
+                  'cursor-not-allowed': !!store.getTickerByName(suggestion.tickerName),
+                  'opacity-25': !!store.getTickerByName(suggestion.tickerName),
+                  'text-grey-800': !!store.getTickerByName(suggestion.tickerName),
+                }"
+                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer hover:text-purple-800"
+                @click="() => addFromSuggestion(suggestion.tickerName)"
               >
-                BTC
+                {{ suggestion.tickerName }}
               </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                DOGE
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                BCH
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                CHD
-              </span>
-            </div> -->
+            </div>
             <div v-if="errorIsTickerAdded" class="text-sm text-red-600">
               Ticker is already added
             </div>
@@ -153,23 +190,14 @@ function selectTicker(tickerName) {
 
       <template v-if="tickers.length">
         <hr class="w-full border-t border-gray-600 my-4" />
-        <dl
-          class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3"
-          :class="{
-            relative: loading,
-            'py-6': loading,
-          }"
-        >
-          <animated-spinner v-if="loading" />
-          <template v-else>
-            <ticker-item
-              v-for="ticker in tickers"
-              :key="ticker.name"
-              :ticker="ticker"
-              @remove-ticker="removeTicker"
-              @select-ticker="selectTicker"
-            />
-          </template>
+        <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <ticker-item
+            v-for="ticker in tickers"
+            :key="ticker.name"
+            :ticker="ticker"
+            @remove-ticker="removeTicker"
+            @select-ticker="selectTicker"
+          />
         </dl>
         <hr class="w-full border-t border-gray-600 my-4" />
       </template>

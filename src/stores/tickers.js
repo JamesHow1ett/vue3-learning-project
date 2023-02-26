@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { fetchTickersPrices, fetchSingleTickePrices } from '../api';
+import { fetchTickersPrices, fetchSingleTickePrices, fetchAvailableCoinList } from '../api';
 
 export const useTickerStore = defineStore('ticker', {
   /**
@@ -10,22 +10,39 @@ export const useTickerStore = defineStore('ticker', {
    */
   /**
    * @returns {{
-   *  tickers: Ticker[],
-   *  currentTicker: Ticker | null,
-   *  loading: boolean
+   *  tickers: Ticker[];
+   *  currentTicker: Ticker | null;
+   *  allCoins: {
+   *    [tickerName: string]: {
+   *      Symbol: string;
+   *      FullName: string;
+   *    };
+   *  } | null;
+   *  loading: boolean;
    * }}
    */
   state: () => ({
+    allCoins: null,
     tickers: [],
     currentTicker: null,
     loading: false,
   }),
   getters: {
     getTickerByName(state) {
+      /**
+       * @param {string} tickerName
+       */
       return (tickerName) => state.tickers.find(({ name }) => name === tickerName);
     },
   },
   actions: {
+    async fetchAllCoinsList() {
+      this.loading = true;
+      const { Data } = await fetchAvailableCoinList();
+
+      this.allCoins = Data;
+      this.loading = false;
+    },
     /**
      * Fetch data for all added tickers
      * @param {string} newTicker
