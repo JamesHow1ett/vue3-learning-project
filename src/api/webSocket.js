@@ -14,5 +14,5 @@ ccStreamer.onopen = function onStreamOpen() {
 };
 
 ccStreamer.onmessage = function onStreamMessage(event) {
-  console.log('Received from Cryptocompare: ' + event);
+  console.log(`Received from Cryptocompare: ${event}`);
 };
