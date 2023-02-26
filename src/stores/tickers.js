@@ -7,6 +7,7 @@ export const useTickerStore = defineStore('ticker', {
    * @property {string} name
    * @property {number} rate
    * @property {number[]} prices
+   * @property {string} imgUrl
    */
   /**
    * @returns {{
@@ -16,6 +17,7 @@ export const useTickerStore = defineStore('ticker', {
    *    [tickerName: string]: {
    *      Symbol: string;
    *      FullName: string;
+   *      ImageUrl: string;
    *    };
    *  } | null;
    *  loading: boolean;
@@ -67,6 +69,7 @@ export const useTickerStore = defineStore('ticker', {
           name: key,
           rate: data[key].USD,
           prices: [data[key].USD],
+          imgUrl: this.allCoins[key].ImageUrl,
         };
         tickersList.push(tickerData);
       });

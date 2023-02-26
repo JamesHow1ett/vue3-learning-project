@@ -18,11 +18,9 @@ const parseTickerValue = computed(() => {
     return '';
   }
 
-  if (props.ticker.rate >= 1) {
-    return props.ticker.rate.toFixed(2);
-  }
+  const formatter = new Intl.NumberFormat('en-EN', { style: 'currency', currency: 'USD' });
 
-  return props.ticker.rate.toPrecision(2);
+  return formatter.format(props.ticker.rate);
 });
 
 const store = useTickerStore();
@@ -55,7 +53,14 @@ const isActive = computed(() => {
   >
     <div class="px-4 py-5 sm:p-6 text-center" @click="selectTicker">
       <dt class="text-sm font-medium text-gray-500 truncate">
-        {{ ticker.name }}
+        <div class="flex justify-center items-center">
+          {{ ticker.name }}
+          <img
+            :src="`https://www.cryptocompare.com/${ticker.imgUrl}`"
+            :alt="ticker.name"
+            class="object-cover h-6"
+          />
+        </div>
       </dt>
       <dd class="mt-1 text-3xl font-semibold text-gray-900">
         {{ parseTickerValue }}
@@ -63,11 +68,11 @@ const isActive = computed(() => {
     </div>
     <div class="w-full border-t border-gray-200"></div>
     <button
-      class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none"
+      class="group flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-purple-800 hover:bg-gray-200 transition-all focus:outline-none"
       @click="removeTicker"
     >
       <svg
-        class="h-5 w-5"
+        class="h-5 w-5 group-hover:fill-purple-800"
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 20 20"
         fill="#718096"
