@@ -1,5 +1,10 @@
 import { BASE_URL_REST, API_KEY } from './constants';
 
+/**
+ *
+ * @param {string} url
+ * @returns {Promise<any>}
+ */
 async function fetchData(url) {
   const response = await fetch(url, {
     method: 'GET',
@@ -8,10 +13,17 @@ async function fetchData(url) {
     },
   });
 
-  return await response.json();
+  return response.json();
 }
 
-export async function fetchTickersPrices(tickersName = []) {
+/**
+ * Fetch data for array of tickers
+ * @param {string[]} tickersName
+ * @returns {Promise<{
+ *  [tickerName: string]: { USD: number }
+ * }>}
+ */
+export async function fetchTickersPrices(tickersName) {
   const url = new URL(`${BASE_URL_REST}/pricemulti`);
   url.searchParams.append('fsyms', tickersName.join(','));
   url.searchParams.append('tsyms', 'USD');
@@ -22,6 +34,13 @@ export async function fetchTickersPrices(tickersName = []) {
   return result;
 }
 
+/**
+ * Fetch data for single ticker
+ * @param {string} tickerName
+ * @returns {Promise<{
+ *  [tickerName: string]: { USD: number }
+ * }>}
+ */
 export async function fetchSingleTickePrices(tickerName) {
   const url = new URL(`${BASE_URL_REST}/price`);
   url.searchParams.append('fsyms', tickerName);

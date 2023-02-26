@@ -74,7 +74,7 @@ function selectTicker(tickerName) {
 
   clearInterval(intervalUpdateGraph);
 
-  if (currentTicker.value && currentTicker.value.name === tickerName) {
+  if (currentTicker.value?.name === tickerName) {
     store.unselectTicker();
 
     return;

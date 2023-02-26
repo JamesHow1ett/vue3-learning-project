@@ -2,6 +2,19 @@ import { defineStore } from 'pinia';
 import { fetchTickersPrices, fetchSingleTickePrices } from '../api';
 
 export const useTickerStore = defineStore('ticker', {
+  /**
+   * @typedef {object} Ticker
+   * @property {string} name
+   * @property {number} rate
+   * @property {number[]} prices
+   */
+  /**
+   * @returns {{
+   *  tickers: Ticker[],
+   *  currentTicker: Ticker | null,
+   *  loading: boolean
+   * }}
+   */
   state: () => ({
     tickers: [],
     currentTicker: null,
@@ -13,19 +26,30 @@ export const useTickerStore = defineStore('ticker', {
     },
   },
   actions: {
+    /**
+     * Fetch data for all added tickers
+     * @param {string} newTicker
+     */
     async fetchTikersData(newTicker) {
       this.loading = true;
 
       const tickers = this.tickers.map(({ name }) => name);
-      tickers.push(newTicker);
+      tickers.push(newTicker.toUpperCase());
 
       const data = await fetchTickersPrices(tickers);
+      /**
+       * @type {Ticker[]}
+       */
       const tickersList = [];
 
       Object.keys(data).forEach((key) => {
+        /**
+         * @type {Ticker}
+         */
         const tickerData = {
           name: key,
           rate: data[key].USD,
+          prices: [data[key].USD],
         };
         tickersList.push(tickerData);
       });
@@ -33,6 +57,9 @@ export const useTickerStore = defineStore('ticker', {
       this.tickers = tickersList;
       this.loading = false;
     },
+    /**
+     * Update added tickers
+     */
     async updateTickersData() {
       if (!this.tickers.length) {
         return;
@@ -46,6 +73,9 @@ export const useTickerStore = defineStore('ticker', {
         ticker.rate = data[key].USD;
       });
     },
+    /**
+     * Update selected ticker prices
+     */
     async graphPrices() {
       if (!this.currentTicker) {
         return;
@@ -55,6 +85,10 @@ export const useTickerStore = defineStore('ticker', {
 
       this.currentTicker.prices.push(USD);
     },
+    /**
+     * Set selected ticker to recive data and show graph of prices
+     * @param {string} tickerName
+     */
     selectTicker(tickerName) {
       const ticker = this.tickers.find(({ name }) => name === tickerName);
 
@@ -65,13 +99,18 @@ export const useTickerStore = defineStore('ticker', {
         };
       }
     },
+    /**
+     * Clear selection
+     */
     unselectTicker() {
       this.currentTicker = null;
     },
+    /**
+     * Remove ticker from list of tickers
+     * @param {string} tickerName
+     */
     removeTicker(tickerName) {
-      const filteredTickers = this.tickers.filter(({ name }) => name !== tickerName);
-
-      this.tickers = filteredTickers;
+      this.tickers = this.tickers.filter(({ name }) => name !== tickerName);
     },
   },
 });
