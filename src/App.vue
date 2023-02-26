@@ -1,14 +1,54 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useTickerStore } from './stores/tickers';
+
 import AnimatedSpinner from './components/animated-spinner/AnimatedSpinner.vue';
 import TickerItem from './components/ticker-item/TickerItem.vue';
+import BarChart from './components/bar-chart/BarChart.vue';
 
+let intervalUpdateGraph;
+let intervalUpdateTickersData;
 const tickerInput = ref('');
+const errorIsTickerAdded = ref(false);
 
 const store = useTickerStore();
 const { tickers, loading, currentTicker } = storeToRefs(store);
+
+watch(tickers, (newValue, oldValue) => {
+  if (!newValue.length) {
+    clearInterval(intervalUpdateTickersData);
+    return;
+  }
+
+  if (newValue.length !== oldValue.length) {
+    clearInterval(intervalUpdateTickersData);
+
+    intervalUpdateTickersData = setInterval(() => {
+      store.updateTickersData();
+    }, 5000);
+  }
+});
+
+watch(currentTicker, (value) => {
+  if (!value) {
+    clearInterval(intervalUpdateGraph);
+    return;
+  }
+
+  intervalUpdateGraph = setInterval(() => {
+    store.graphPrices();
+  }, 3000);
+});
+
+watch(
+  () => tickerInput.value,
+  (tickerName) => {
+    const addedTicker = store.getTickerByName(tickerName);
+
+    errorIsTickerAdded.value = !!addedTicker;
+  }
+);
 
 function removeTicker(tickerName) {
   store.removeTicker(tickerName);
@@ -22,6 +62,22 @@ function addNewTicker() {
   store.fetchTikersData(tickerInput.value);
 
   tickerInput.value = '';
+}
+
+function selectTicker(tickerName) {
+  if (!tickerName || errorIsTickerAdded.value) {
+    return;
+  }
+
+  clearInterval(intervalUpdateGraph);
+
+  if (currentTicker.value && currentTicker.value.name === tickerName) {
+    store.unselectTicker();
+
+    return;
+  }
+
+  return store.selectTicker(tickerName);
 }
 </script>
 
@@ -40,6 +96,7 @@ function addNewTicker() {
                 id="wallet"
                 class="block w-full pr-10 pl-2 py-2 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
                 placeholder="Example DOGE"
+                @keyup.enter="addNewTicker"
               />
             </div>
             <!-- <div class="flex bg-white shadow-md p-1 rounded-md flex-wrap">
@@ -64,11 +121,13 @@ function addNewTicker() {
                 CHD
               </span>
             </div> -->
-            <!-- <div class="text-sm text-red-600">Такой тикер уже добавлен</div> -->
+            <div v-if="errorIsTickerAdded" class="text-sm text-red-600">
+              Ticker is already added
+            </div>
           </div>
         </div>
         <button
-          :disabled="!tickerInput"
+          :disabled="!tickerInput || errorIsTickerAdded"
           type="button"
           class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-25"
           @click="addNewTicker"
@@ -91,17 +150,30 @@ function addNewTicker() {
 
       <template v-if="tickers.length">
         <hr class="w-full border-t border-gray-600 my-4" />
-        <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
-          <ticker-item
-            v-for="ticker in tickers"
-            :key="ticker.name"
-            :ticker="ticker"
-            @remove-ticker="removeTicker"
-          />
+        <dl
+          class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3"
+          :class="{
+            relative: loading,
+            'py-6': loading,
+          }"
+        >
+          <animated-spinner v-if="loading" />
+          <template v-else>
+            <ticker-item
+              v-for="ticker in tickers"
+              :key="ticker.name"
+              :ticker="ticker"
+              @remove-ticker="removeTicker"
+              @select-ticker="selectTicker"
+            />
+          </template>
         </dl>
         <hr class="w-full border-t border-gray-600 my-4" />
       </template>
-      <!-- BarChart will be here -->
+
+      <template v-if="currentTicker">
+        <bar-chart :ticker="currentTicker" @unset-ticker="store.unselectTicker" />
+      </template>
     </div>
   </div>
 </template>

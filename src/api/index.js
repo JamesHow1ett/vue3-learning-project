@@ -1,4 +1,4 @@
-const baseUrl = 'https://min-api.cryptocompare.com/data';
+import { BASE_URL_REST, API_KEY } from './constants';
 
 async function fetchData(url) {
   const response = await fetch(url, {
@@ -11,11 +11,22 @@ async function fetchData(url) {
   return await response.json();
 }
 
-// pricemulti?fsyms=BTC&tsyms=USD
 export async function fetchTickersPrices(tickersName = []) {
-  const url = new URL(`${baseUrl}/pricemulti`);
+  const url = new URL(`${BASE_URL_REST}/pricemulti`);
   url.searchParams.append('fsyms', tickersName.join(','));
   url.searchParams.append('tsyms', 'USD');
+  url.searchParams.append('api_key', API_KEY);
+
+  const result = await fetchData(url);
+
+  return result;
+}
+
+export async function fetchSingleTickePrices(tickerName) {
+  const url = new URL(`${BASE_URL_REST}/price`);
+  url.searchParams.append('fsyms', tickerName);
+  url.searchParams.append('tsyms', 'USD');
+  url.searchParams.append('api_key', API_KEY);
 
   const result = await fetchData(url);
 

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { fetchTickersPrices } from '../api';
+import { fetchTickersPrices, fetchSingleTickePrices } from '../api';
 
 export const useTickerStore = defineStore('ticker', {
   state: () => ({
@@ -14,6 +14,8 @@ export const useTickerStore = defineStore('ticker', {
   },
   actions: {
     async fetchTikersData(newTicker) {
+      this.loading = true;
+
       const tickers = this.tickers.map(({ name }) => name);
       tickers.push(newTicker);
 
@@ -29,12 +31,38 @@ export const useTickerStore = defineStore('ticker', {
       });
 
       this.tickers = tickersList;
+      this.loading = false;
+    },
+    async updateTickersData() {
+      if (!this.tickers.length) {
+        return;
+      }
+
+      const tickers = this.tickers.map(({ name }) => name);
+      const data = await fetchTickersPrices(tickers);
+
+      Object.keys(data).forEach((key) => {
+        const ticker = this.tickers.find(({ name }) => name === key);
+        ticker.rate = data[key].USD;
+      });
+    },
+    async graphPrices() {
+      if (!this.currentTicker) {
+        return;
+      }
+
+      const { USD } = await fetchSingleTickePrices(this.currentTicker.name);
+
+      this.currentTicker.prices.push(USD);
     },
     selectTicker(tickerName) {
       const ticker = this.tickers.find(({ name }) => name === tickerName);
 
       if (ticker) {
-        this.currentTicker = ticker;
+        this.currentTicker = {
+          ...ticker,
+          prices: [ticker.rate],
+        };
       }
     },
     unselectTicker() {

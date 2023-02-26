@@ -11,14 +11,14 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['removeTicker']);
+const emit = defineEmits(['removeTicker', 'selectTicker']);
 
 const parseTickerValue = computed(() => {
   if (!props.ticker.name) {
     return '';
   }
 
-  if (props.ticker.rate >= 10) {
+  if (props.ticker.rate >= 1) {
     return props.ticker.rate.toFixed(2);
   }
 
@@ -33,16 +33,7 @@ function removeTicker() {
 }
 
 function selectTicker() {
-  if (!props.ticker.name) {
-    return;
-  }
-
-  if (isActive.value) {
-    store.unselectTicker();
-    return;
-  }
-
-  return store.selectTicker(props.ticker.name);
+  emit('selectTicker', props.ticker.name);
 }
 
 const isActive = computed(() => {
