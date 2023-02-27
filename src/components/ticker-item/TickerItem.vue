@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useTickerStore } from '../../stores/tickers';
+import { parseTickerPrice } from '../../utils/utils';
 
 const props = defineProps({
   ticker: {
@@ -18,9 +19,7 @@ const parseTickerValue = computed(() => {
     return '';
   }
 
-  const formatter = new Intl.NumberFormat('en-EN', { style: 'currency', currency: 'USD' });
-
-  return formatter.format(props.ticker.rate);
+  return parseTickerPrice(props.ticker.rate);
 });
 
 const store = useTickerStore();

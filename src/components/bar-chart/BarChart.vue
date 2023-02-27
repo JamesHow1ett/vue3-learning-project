@@ -1,21 +1,84 @@
 <script setup>
+import { computed, ref, onMounted, onBeforeMount, nextTick, watch } from 'vue';
+import { useTickerStore } from '../../stores/tickers';
+import { MAX_GRAPH_ELEMENTS } from '../../stores/constants';
+import { parseTickerPrice } from '../../utils/utils';
+import { HALF_GRAPH_HEIGHT } from './constants';
+
 const props = defineProps({
   ticker: {
     type: Object,
     required: true,
   },
 });
+
 const emit = defineEmits(['unsetTicker']);
+
+const store = useTickerStore();
+
+const barChart = ref(null);
+const maxValue = ref(0);
+const minValue = ref(0);
+
+const noramilizedGraph = computed(() => {
+  if (maxValue.value === minValue.value) {
+    return props.ticker.prices.map(() => HALF_GRAPH_HEIGHT);
+  }
+
+  return props.ticker.prices.map(
+    (price) => 5 + ((price - minValue.value) * 95) / (maxValue.value - minValue.value)
+  );
+});
+
+function calculateMaxGraphElements() {
+  if (!barChart.value) {
+    return;
+  }
+
+  store.setMaxGraphElements(barChart.value.clientWidth / MAX_GRAPH_ELEMENTS);
+}
+
+watch(
+  () => props.ticker,
+  () => {
+    maxValue.value = Math.max(...props.ticker.prices);
+    minValue.value = Math.min(...props.ticker.prices);
+    nextTick().then(calculateMaxGraphElements);
+  },
+  {
+    deep: true,
+    immediate: true,
+  }
+);
+
+onMounted(() => {
+  window.addEventListener('resize', calculateMaxGraphElements);
+});
+
+onBeforeMount(() => {
+  window.removeEventListener('resize', calculateMaxGraphElements);
+});
 </script>
 
 <template>
-  <section class="relative">
-    <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">{{ ticker.name }} - USD</h3>
-    <div class="flex items-end border-gray-600 border-b border-l h-64">
+  <section class="relative flex py-4 mt-6">
+    <h3 class="absolute text-lg leading-6 font-medium text-gray-900 -top-4">
+      {{ ticker.fullName }} - USD
+    </h3>
+    <div class="flex flex-col justify-between mr-2">
+      <div class="text-[0.7rem]">
+        {{ parseTickerPrice(maxValue, true) }}
+      </div>
+      <div class="text-[0.7rem]">
+        {{ parseTickerPrice(minValue, true) }}
+      </div>
+    </div>
+    <div ref="barChart" class="flex items-end border-gray-600 border-b border-l w-[95%] h-64">
       <div
-        v-for="(bar, idx) in ticker.prices"
+        v-for="(bar, idx) in noramilizedGraph"
         :key="idx"
-        class="bg-purple-800 border w-10 h-24"
+        :style="{ height: `${bar}%` }"
+        class="bg-purple-800 border w-10"
       ></div>
     </div>
     <button type="button" class="absolute top-0 right-0" @click="emit('unsetTicker')">

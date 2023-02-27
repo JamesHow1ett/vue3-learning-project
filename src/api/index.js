@@ -43,7 +43,7 @@ export async function fetchTickersPrices(tickersName) {
  */
 export async function fetchSingleTickePrices(tickerName) {
   const url = new URL(`${BASE_URL_REST}/price`);
-  url.searchParams.append('fsyms', tickerName);
+  url.searchParams.append('fsym', tickerName);
   url.searchParams.append('tsyms', 'USD');
   url.searchParams.append('api_key', API_KEY);
 

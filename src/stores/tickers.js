@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia';
 import { fetchTickersPrices, fetchSingleTickePrices, fetchAvailableCoinList } from '../api';
+import { MAX_GRAPH_ELEMENTS } from './constants';
 
 export const useTickerStore = defineStore('ticker', {
   /**
    * @typedef {object} Ticker
    * @property {string} name
+   * @property {string} fullName
    * @property {number} rate
    * @property {number[]} prices
    * @property {string} imgUrl
@@ -21,6 +23,7 @@ export const useTickerStore = defineStore('ticker', {
    *    };
    *  } | null;
    *  loading: boolean;
+   *  maxGraphElements: number;
    * }}
    */
   state: () => ({
@@ -28,6 +31,7 @@ export const useTickerStore = defineStore('ticker', {
     tickers: [],
     currentTicker: null,
     loading: false,
+    maxGraphElements: MAX_GRAPH_ELEMENTS,
   }),
   getters: {
     getTickerByName(state) {
@@ -70,6 +74,7 @@ export const useTickerStore = defineStore('ticker', {
           rate: data[key].USD,
           prices: [data[key].USD],
           imgUrl: this.allCoins[key].ImageUrl,
+          fullName: this.allCoins[key].FullName,
         };
         tickersList.push(tickerData);
       });
@@ -104,6 +109,10 @@ export const useTickerStore = defineStore('ticker', {
       const { USD } = await fetchSingleTickePrices(this.currentTicker.name);
 
       this.currentTicker.prices.push(USD);
+
+      while (this.currentTicker.prices.length > this.maxGraphElements) {
+        this.shiftSelectedTickerGraph();
+      }
     },
     /**
      * Set selected ticker to recive data and show graph of prices
@@ -131,6 +140,23 @@ export const useTickerStore = defineStore('ticker', {
      */
     removeTicker(tickerName) {
       this.tickers = this.tickers.filter(({ name }) => name !== tickerName);
+
+      if (this.currentTicker?.name === tickerName) {
+        this.currentTicker = null;
+      }
+    },
+    /**
+     * Remove first price to show correct graph
+     */
+    shiftSelectedTickerGraph() {
+      this.currentTicker.prices.shift();
+    },
+    /**
+     * Set max elements value
+     * @param {number} maxElements
+     */
+    setMaxGraphElements(maxElements) {
+      this.maxGraphElements = maxElements;
     },
   },
 });

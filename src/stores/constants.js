@@ -4,3 +4,5 @@ export const defaultTypeSuggestions = [
   { tickerName: 'BCH' },
   { tickerName: 'ETH' },
 ];
+
+export const MAX_GRAPH_ELEMENTS = 36;
