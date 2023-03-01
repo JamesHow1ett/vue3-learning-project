@@ -52,7 +52,7 @@ const isActive = computed(() => {
   >
     <div class="px-4 py-5 sm:p-6 text-center" @click="selectTicker">
       <dt class="text-sm font-medium text-gray-500 truncate">
-        <div class="flex justify-center items-center">
+        <div class="flex justify-center items-center gap-1">
           {{ ticker.name }}
           <img
             :src="`https://www.cryptocompare.com/${ticker.imgUrl}`"
