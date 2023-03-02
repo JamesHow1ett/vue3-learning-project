@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia';
 import { useTickerStore } from './stores/tickers';
 import { TIMER_DELAY } from './utils/constants';
 import { defaultTypeSuggestions } from './stores/constants';
+import { getTickerList } from './services/localStoreService';
 
 import AnimatedSpinner from './components/animated-spinner/AnimatedSpinner.vue';
 import TickerItem from './components/ticker-item/TickerItem.vue';
@@ -30,6 +31,12 @@ const { allCoins, tickers, loading, currentTicker } = storeToRefs(store);
 
 onMounted(async () => {
   await store.fetchAllCoinsList();
+
+  const savedTickers = getTickerList();
+
+  if (savedTickers) {
+    await store.fetchTikersData(savedTickers);
+  }
 });
 
 const filteredTickers = computed(() =>

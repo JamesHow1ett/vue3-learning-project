@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { fetchTickersPrices, fetchSingleTickePrices, fetchAvailableCoinList } from '../api';
+import { setTickerList } from '../services/localStoreService';
 import { MAX_GRAPH_ELEMENTS } from './constants';
 
 export const useTickerStore = defineStore('ticker', {
@@ -51,13 +52,20 @@ export const useTickerStore = defineStore('ticker', {
     },
     /**
      * Fetch data for all added tickers
-     * @param {string} newTicker
+     * @param {string | string[]} tickerName
      */
-    async fetchTikersData(newTicker) {
+    async fetchTikersData(tickerName) {
       this.loading = true;
 
       const tickers = this.tickers.map(({ name }) => name);
-      tickers.push(newTicker.toUpperCase());
+
+      if (typeof tickerName === 'string') {
+        tickers.push(tickerName.toUpperCase());
+      } else {
+        tickers.push(...tickerName);
+      }
+
+      setTickerList(tickers);
 
       const data = await fetchTickersPrices(tickers);
       /**
@@ -144,6 +152,8 @@ export const useTickerStore = defineStore('ticker', {
       if (this.currentTicker?.name === tickerName) {
         this.currentTicker = null;
       }
+
+      setTickerList(this.tickers.map(({ name }) => name));
     },
     /**
      * Remove first price to show correct graph
