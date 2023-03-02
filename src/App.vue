@@ -24,7 +24,6 @@ const state = reactive({
     endIdx: 6,
   },
 });
-
 const store = useTickerStore();
 const { allCoins, tickers, loading, currentTicker } = storeToRefs(store);
 
@@ -120,8 +119,26 @@ watch(
   }
 );
 
+function prevPage() {
+  if (hasPrevPage.value) {
+    state.pagination.startIdx -= TICKERS_PER_PAGE;
+    state.pagination.endIdx -= TICKERS_PER_PAGE;
+  }
+}
+
+function nextPage() {
+  if (hasNextPage.value) {
+    state.pagination.startIdx += TICKERS_PER_PAGE;
+    state.pagination.endIdx += TICKERS_PER_PAGE;
+  }
+}
+
 function removeTicker(tickerName) {
   store.removeTicker(tickerName);
+
+  if (paginatedTickers.value.length < currentPage.value * TICKERS_PER_PAGE) {
+    prevPage();
+  }
 }
 
 function addNewTicker() {
@@ -153,20 +170,6 @@ function selectTicker(tickerName) {
   }
 
   store.selectTicker(tickerName);
-}
-
-function prevPage() {
-  if (hasPrevPage.value) {
-    state.pagination.startIdx -= TICKERS_PER_PAGE;
-    state.pagination.endIdx -= TICKERS_PER_PAGE;
-  }
-}
-
-function nextPage() {
-  if (hasNextPage.value) {
-    state.pagination.startIdx += TICKERS_PER_PAGE;
-    state.pagination.endIdx += TICKERS_PER_PAGE;
-  }
 }
 </script>
 
