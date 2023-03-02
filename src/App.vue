@@ -11,6 +11,10 @@ import BarChart from './components/bar-chart/BarChart.vue';
 
 const { THREE_SECONDS, FIVE_SECONDS } = TIMER_DELAY;
 const TICKERS_PER_PAGE = 6;
+const DEFAULT_PAGINATION = {
+  startIdx: 0,
+  endIdx: 6,
+};
 
 let intervalUpdateGraph;
 let intervalUpdateTickersData;
@@ -19,10 +23,7 @@ const state = reactive({
   filterInput: '',
   errorIsTickerAdded: false,
   typeSuggestions: defaultTypeSuggestions,
-  pagination: {
-    startIdx: 0,
-    endIdx: 6,
-  },
+  pagination: { ...DEFAULT_PAGINATION },
 });
 const store = useTickerStore();
 const { allCoins, tickers, loading, currentTicker } = storeToRefs(store);
@@ -119,6 +120,13 @@ watch(
   }
 );
 
+watch(
+  () => state.filterInput,
+  () => {
+    state.pagination = { ...DEFAULT_PAGINATION };
+  }
+);
+
 function prevPage() {
   if (hasPrevPage.value) {
     state.pagination.startIdx -= TICKERS_PER_PAGE;
@@ -142,7 +150,7 @@ function removeTicker(tickerName) {
 }
 
 function addNewTicker() {
-  if (!state.tickerInput) {
+  if (!state.tickerInput || state.errorIsTickerAdded) {
     return;
   }
 
@@ -211,7 +219,7 @@ function selectTicker(tickerName) {
                 {{ suggestion.tickerName }}
               </span>
             </div>
-            <div v-if="errorIsTickerAdded" class="text-sm text-red-600">
+            <div v-if="state.errorIsTickerAdded" class="text-sm text-red-600">
               Ticker is already added
             </div>
           </div>
