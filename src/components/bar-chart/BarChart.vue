@@ -74,12 +74,14 @@ onBeforeMount(() => {
       </div>
     </div>
     <div ref="barChart" class="flex items-end border-gray-600 border-b border-l w-[95%] h-64">
-      <div
-        v-for="(bar, idx) in noramilizedGraph"
-        :key="idx"
-        :style="{ height: `${bar}%` }"
-        class="bg-purple-800 border w-10"
-      ></div>
+      <transition-group name="graph">
+        <div
+          v-for="(bar, idx) in noramilizedGraph"
+          :key="idx"
+          :style="{ height: `${bar}%` }"
+          class="bg-purple-800 border w-10"
+        ></div>
+      </transition-group>
     </div>
     <button type="button" class="absolute top-0 right-0" @click="emit('unsetTicker')">
       <svg
@@ -106,3 +108,17 @@ onBeforeMount(() => {
     </button>
   </section>
 </template>
+
+<style scoped>
+.graph-enter-active,
+.graph-leave-active {
+  transition: all 0.5s ease;
+}
+.graph-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+.graph-leave-to {
+  opacity: 0;
+}
+</style>

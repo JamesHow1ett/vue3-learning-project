@@ -38,6 +38,7 @@ export const useTickerStore = defineStore('ticker', {
     getTickerByName(state) {
       /**
        * @param {string} tickerName
+       * @returns {Ticker}
        */
       return (tickerName) => state.tickers.find(({ name }) => name === tickerName);
     },

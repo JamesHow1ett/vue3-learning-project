@@ -47,7 +47,13 @@ const paginatedTickers = computed(() =>
   filteredTickers.value.slice(state.pagination.startIdx, state.pagination.endIdx)
 );
 
-const currentPage = computed(() => state.pagination.endIdx / TICKERS_PER_PAGE);
+const currentPage = computed(() => {
+  if (!filteredTickers.value.length) {
+    return 0;
+  }
+
+  return state.pagination.endIdx / TICKERS_PER_PAGE;
+});
 
 const allPages = computed(() => {
   const hasRemainderOfDivision = filteredTickers.value.length % TICKERS_PER_PAGE > 0;
@@ -189,7 +195,9 @@ function selectTicker(tickerName) {
 </script>
 
 <template>
-  <animated-spinner v-if="loading" />
+  <Transition name="spinner">
+    <animated-spinner v-if="loading" />
+  </Transition>
 
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
     <div class="container">
@@ -289,20 +297,52 @@ function selectTicker(tickerName) {
         </div>
         <hr class="w-full border-t border-gray-600 my-4" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
-          <ticker-item
-            v-for="ticker in paginatedTickers"
-            :key="ticker.name"
-            :ticker="ticker"
-            @remove-ticker="removeTicker"
-            @select-ticker="selectTicker"
-          />
+          <transition-group name="tickers-list">
+            <ticker-item
+              v-for="ticker in paginatedTickers"
+              :key="ticker.name"
+              :ticker="ticker"
+              @remove-ticker="removeTicker"
+              @select-ticker="selectTicker"
+            />
+          </transition-group>
         </dl>
         <hr class="w-full border-t border-gray-600 my-4" />
       </template>
 
-      <template v-if="currentTicker">
-        <bar-chart :ticker="currentTicker" @unset-ticker="store.unselectTicker" />
-      </template>
+      <Transition name="bar-chart">
+        <bar-chart
+          v-if="currentTicker"
+          :ticker="currentTicker"
+          @unset-ticker="store.unselectTicker"
+        />
+      </Transition>
     </div>
   </div>
 </template>
+
+<style scoped>
+.spinner-enter-active,
+.spinner-leave-active,
+.bar-chart-enter-active,
+.bar-chart-leave-active,
+.tickers-list-enter-active,
+.tickers-list-leave-active {
+  transition: all 0.5s ease;
+}
+
+.bar-chart-enter-from,
+.bar-chart-leave-to,
+.spinner-enter-from,
+.spinner-leave-to {
+  opacity: 0;
+}
+.tickers-list-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+.tickers-list-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+</style>
