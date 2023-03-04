@@ -5,6 +5,7 @@ import { useTickerStore } from './stores/tickers';
 import { TIMER_DELAY } from './utils/constants';
 import { defaultTypeSuggestions } from './stores/constants';
 import { getTickerList } from './services/localStoreService';
+import { usePageParams } from './composables/usePageParams';
 
 import AnimatedSpinner from './components/animated-spinner/AnimatedSpinner.vue';
 import TickerItem from './components/ticker-item/TickerItem.vue';
@@ -28,16 +29,6 @@ const state = reactive({
 });
 const store = useTickerStore();
 const { allCoins, tickers, loading, currentTicker } = storeToRefs(store);
-
-onMounted(async () => {
-  await store.fetchAllCoinsList();
-
-  const savedTickers = getTickerList();
-
-  if (savedTickers) {
-    await store.fetchTikersData(savedTickers);
-  }
-});
 
 const filteredTickers = computed(() =>
   tickers.value.filter((ticker) => ticker.name.includes(state.filterInput.toUpperCase()))
@@ -68,6 +59,23 @@ const allPages = computed(() => {
 const hasPrevPage = computed(() => currentPage.value > 1);
 
 const hasNextPage = computed(() => filteredTickers.value.length > state.pagination.endIdx);
+
+const pageOptions = computed(() => ({
+  page: currentPage.value,
+  filter: state.filterInput,
+}));
+
+const { page, filter, updatePageOptions } = usePageParams(currentPage, state.filterInput);
+
+onMounted(async () => {
+  await store.fetchAllCoinsList();
+
+  const savedTickers = getTickerList();
+
+  if (savedTickers) {
+    await store.fetchTikersData(savedTickers);
+  }
+});
 
 watch(tickers, (newValue, oldValue) => {
   if (!newValue.length) {
@@ -137,6 +145,13 @@ watch(
   () => state.filterInput,
   () => {
     state.pagination = { ...DEFAULT_PAGINATION };
+  }
+);
+
+watch(
+  () => pageOptions.value,
+  (value) => {
+    updatePageOptions(value.page, value.filter);
   }
 );
 
