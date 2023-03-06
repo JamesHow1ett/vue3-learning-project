@@ -1,18 +1,29 @@
-import { unref, ref, onMounted } from 'vue';
+import { unref } from 'vue';
 
 /**
  *
  * @returns {{
- *  page: import('vue').Ref<string>;
- *  filter: import('vue').Ref<string>;
+ *  getPageOptions: () => {
+ *  page: string;
+ *  filter: string;
+ * };
  *  updatePageOptions: () => void;
+ *  deletePageOption: (optionName: string) => void;
  * }}
  */
 export function usePageParams() {
   const { searchParams, pathname } = new URL(window.location.href);
 
-  const page = ref(searchParams.get('page') ?? 1);
-  const filter = ref(searchParams.get('filter') ?? '');
+  /**
+   * @private
+   */
+  function setPageParams() {
+    if (searchParams.toString()) {
+      window.history.pushState(null, document.title, `${pathname}?${searchParams.toString()}`);
+    } else {
+      window.history.pushState(null, document.title, `${pathname}`);
+    }
+  }
 
   /**
    *
@@ -20,27 +31,38 @@ export function usePageParams() {
    * @param {import('vue').Ref<string> | string} currentFilter
    */
   function updatePageOptions(currentPage, currentFilter) {
-    page.value = unref(currentPage);
-    filter.value = unref(currentFilter);
+    const page = unref(currentPage);
+    const filter = unref(currentFilter);
 
-    if (parseInt(page.value, 10)) {
-      searchParams.set('page', page.value);
+    if (parseInt(page, 10)) {
+      searchParams.set('page', page);
     }
 
-    if (filter.value) {
-      searchParams.set('filter', filter.value);
+    if (filter) {
+      searchParams.set('filter', filter);
     } else {
       searchParams.delete('filter');
     }
 
-    if (searchParams.toString()) {
-      window.history.pushState(null, document.title, `${pathname}?${searchParams.toString()}`);
-    }
+    setPageParams();
   }
 
-  onMounted(() => {
-    updatePageOptions(page, filter);
-  });
+  function getPageOptions() {
+    return {
+      page: searchParams.get('page'),
+      filter: searchParams.get('filter'),
+    };
+  }
 
-  return { page, filter, updatePageOptions };
+  /**
+   *
+   * @param {string} optionName
+   */
+  function deletePageOption(optionName) {
+    searchParams.delete(optionName);
+
+    setPageParams();
+  }
+
+  return { updatePageOptions, getPageOptions, deletePageOption };
 }

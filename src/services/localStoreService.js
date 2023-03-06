@@ -13,7 +13,16 @@ export function getTickerList() {
   return JSON.parse(tickers);
 }
 
+/**
+ *
+ * @param {string[]} tickers
+ */
 export function setTickerList(tickers) {
+  if (!tickers.length) {
+    localStorage.removeItem('tickers-list');
+    return;
+  }
+
   const tickersStringified = JSON.stringify(tickers);
 
   localStorage.setItem(STORAGE_KEY, tickersStringified);

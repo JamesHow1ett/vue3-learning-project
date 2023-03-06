@@ -1,4 +1,4 @@
-import { MINIMAL_INTL_NUMBER_FORMAT_VALUE } from './constants';
+import { MINIMAL_INTL_NUMBER_FORMAT_VALUE, TICKERS_PER_PAGE } from './constants';
 
 /**
  * @param {number} price
@@ -19,4 +19,27 @@ export const parseTickerPrice = (price, isParseAsNumber) => {
   }
 
   return formatter.format(price);
+};
+
+/**
+ *
+ * @param {number} min
+ * @param {number} max
+ * @returns {number}
+ */
+export const gerRandomNumber = (min, max) => Math.round(Math.random() * (max - min) + min);
+
+/**
+ *
+ * @param {number} tickers
+ * @returns {number}
+ */
+export const getAllPages = (tickers) => {
+  const hasRemainderOfDivision = tickers % TICKERS_PER_PAGE > 0;
+
+  if (hasRemainderOfDivision) {
+    return Math.floor(tickers / TICKERS_PER_PAGE) + 1;
+  }
+
+  return Math.floor(tickers / TICKERS_PER_PAGE);
 };

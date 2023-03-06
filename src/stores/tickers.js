@@ -54,6 +54,7 @@ export const useTickerStore = defineStore('ticker', {
     /**
      * Fetch data for all added tickers
      * @param {string | string[]} tickerName
+     * @returns {Promise<Ticker[]>}
      */
     async fetchTikersData(tickerName) {
       this.loading = true;
@@ -90,6 +91,8 @@ export const useTickerStore = defineStore('ticker', {
 
       this.tickers = tickersList;
       this.loading = false;
+
+      return tickersList;
     },
     /**
      * Update added tickers

@@ -2,7 +2,8 @@
 import { onMounted, reactive, watch, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useTickerStore } from './stores/tickers';
-import { TIMER_DELAY } from './utils/constants';
+import { getAllPages } from './utils/utils';
+import { TIMER_DELAY, TICKERS_PER_PAGE, DEFAULT_PAGINATION } from './utils/constants';
 import { defaultTypeSuggestions } from './stores/constants';
 import { getTickerList } from './services/localStoreService';
 import { usePageParams } from './composables/usePageParams';
@@ -12,23 +13,58 @@ import TickerItem from './components/ticker-item/TickerItem.vue';
 import BarChart from './components/bar-chart/BarChart.vue';
 
 const { THREE_SECONDS, FIVE_SECONDS } = TIMER_DELAY;
-const TICKERS_PER_PAGE = 6;
-const DEFAULT_PAGINATION = {
-  startIdx: 0,
-  endIdx: 6,
-};
+
+const { updatePageOptions, getPageOptions } = usePageParams();
+
+const { filter } = getPageOptions();
 
 let intervalUpdateGraph;
 let intervalUpdateTickersData;
 const state = reactive({
   tickerInput: '',
-  filterInput: '',
+  filterInput: filter ?? '',
   errorIsTickerAdded: false,
   typeSuggestions: defaultTypeSuggestions,
   pagination: { ...DEFAULT_PAGINATION },
 });
 const store = useTickerStore();
 const { allCoins, tickers, loading, currentTicker } = storeToRefs(store);
+
+onMounted(async () => {
+  await store.fetchAllCoinsList();
+
+  const savedTickers = getTickerList();
+
+  if (savedTickers) {
+    store.fetchTikersData(savedTickers).then((tickersList) => {
+      const { page } = getPageOptions();
+      const parsedPage = parseInt(page, 10);
+
+      if (parsedPage === 1) {
+        state.pagination = {
+          ...DEFAULT_PAGINATION,
+        };
+      } else if (parsedPage > 1) {
+        const lastPage = getAllPages(tickersList.length);
+        const hasPage = tickersList.length / (parsedPage * TICKERS_PER_PAGE - TICKERS_PER_PAGE) > 1;
+
+        if (hasPage) {
+          state.pagination = {
+            startIdx: parsedPage * TICKERS_PER_PAGE - TICKERS_PER_PAGE,
+            endIdx: parsedPage * TICKERS_PER_PAGE,
+          };
+        } else {
+          state.pagination = {
+            startIdx: lastPage * TICKERS_PER_PAGE - TICKERS_PER_PAGE,
+            endIdx: DEFAULT_PAGINATION.endIdx * lastPage,
+          };
+        }
+      }
+    });
+
+    updatePageOptions(state.pagination.endIdx / TICKERS_PER_PAGE, state.filterInput);
+  }
+});
 
 const filteredTickers = computed(() =>
   tickers.value.filter((ticker) => ticker.name.includes(state.filterInput.toUpperCase()))
@@ -39,22 +75,10 @@ const paginatedTickers = computed(() =>
 );
 
 const currentPage = computed(() => {
-  if (!filteredTickers.value.length) {
-    return 0;
-  }
-
   return state.pagination.endIdx / TICKERS_PER_PAGE;
 });
 
-const allPages = computed(() => {
-  const hasRemainderOfDivision = filteredTickers.value.length % TICKERS_PER_PAGE > 0;
-
-  if (hasRemainderOfDivision) {
-    return Math.floor(filteredTickers.value.length / TICKERS_PER_PAGE) + 1;
-  }
-
-  return Math.floor(filteredTickers.value.length / TICKERS_PER_PAGE);
-});
+const allPages = computed(() => getAllPages(tickers.value.length));
 
 const hasPrevPage = computed(() => currentPage.value > 1);
 
@@ -64,18 +88,6 @@ const pageOptions = computed(() => ({
   page: currentPage.value,
   filter: state.filterInput,
 }));
-
-const { page, filter, updatePageOptions } = usePageParams(currentPage, state.filterInput);
-
-onMounted(async () => {
-  await store.fetchAllCoinsList();
-
-  const savedTickers = getTickerList();
-
-  if (savedTickers) {
-    await store.fetchTikersData(savedTickers);
-  }
-});
 
 watch(tickers, (newValue, oldValue) => {
   if (!newValue.length) {
@@ -313,13 +325,18 @@ function selectTicker(tickerName) {
         <hr class="w-full border-t border-gray-600 my-4" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <transition-group name="tickers-list">
-            <ticker-item
-              v-for="ticker in paginatedTickers"
-              :key="ticker.name"
-              :ticker="ticker"
-              @remove-ticker="removeTicker"
-              @select-ticker="selectTicker"
-            />
+            <template v-if="paginatedTickers.length">
+              <ticker-item
+                v-for="ticker in paginatedTickers"
+                :key="ticker.name"
+                :ticker="ticker"
+                @remove-ticker="removeTicker"
+                @select-ticker="selectTicker"
+              />
+            </template>
+            <div v-else>
+              <span class="text-md">No results found.</span>
+            </div>
           </transition-group>
         </dl>
         <hr class="w-full border-t border-gray-600 my-4" />
@@ -340,10 +357,13 @@ function selectTicker(tickerName) {
 .spinner-enter-active,
 .spinner-leave-active,
 .bar-chart-enter-active,
-.bar-chart-leave-active,
+.bar-chart-leave-active {
+  transition: all 0.5s ease;
+}
+
 .tickers-list-enter-active,
 .tickers-list-leave-active {
-  transition: all 0.5s ease;
+  transition: all 0.3s ease-in;
 }
 
 .bar-chart-enter-from,
