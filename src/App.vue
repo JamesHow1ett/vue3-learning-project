@@ -135,43 +135,44 @@ watch(currentTicker, (value) => {
 });
 
 /**
+ * Show random suggestion
+ */
+const getRandomSuggestions = () => {
+  const maxLenth = allCoinsNames.value.length;
+  const startIdx = getRandomNumber(0, maxLenth - 4);
+  const endIdx = startIdx + 4;
+
+  const guessSuggestions = allCoinsNames.value
+    .slice(startIdx, endIdx)
+    .map(([coinName]) => coinName);
+  const randomSuggestionsList = [];
+
+  guessSuggestions.forEach((coin) => {
+    if (addedTickersNames.value.includes(coin)) {
+      const excludeIndexes = fillRange(startIdx, endIdx);
+      const newRandomIdx = getRandomNumber(startIdx, endIdx, excludeIndexes);
+      const [[suggestions]] = allCoinsNames.value.slice(startIdx, endIdx).slice(newRandomIdx);
+
+      randomSuggestionsList.push({
+        tickerName: allCoins.value[suggestions].Symbol,
+      });
+    } else {
+      randomSuggestionsList.push({
+        tickerName: allCoins.value[coin].Symbol,
+      });
+    }
+  });
+  state.typeSuggestions = randomSuggestionsList;
+};
+
+/**
  * Show suggestions list, but not more than four suggestion
  * @param {string} tickerName
- * @param {boolean?} findRandom
  */
-const updateSuggestions = (tickerName, findRandom) => {
+const updateSuggestions = (tickerName) => {
   const tickerNameUpperCase = tickerName.toUpperCase();
   const addedTicker = store.getTickerByName(tickerNameUpperCase);
   state.errorIsTickerAdded = !!addedTicker;
-
-  if (findRandom) {
-    const maxLenth = allCoinsNames.value.length;
-    const startIdx = getRandomNumber(0, maxLenth - 4);
-    const endIdx = startIdx + 4;
-
-    const guessSuggestions = allCoinsNames.value
-      .slice(startIdx, endIdx)
-      .map(([coinName]) => coinName);
-    const randomSuggestionsList = [];
-
-    guessSuggestions.forEach((coin) => {
-      if (addedTickersNames.value.includes(coin)) {
-        const excludeIndexes = fillRange(startIdx, endIdx);
-        const newRandomIdx = getRandomNumber(startIdx, endIdx, excludeIndexes);
-        const [[suggestions]] = allCoinsNames.value.slice(startIdx, endIdx).slice(newRandomIdx);
-
-        randomSuggestionsList.push({
-          tickerName: allCoins.value[suggestions].Symbol,
-        });
-      } else {
-        randomSuggestionsList.push({
-          tickerName: allCoins.value[coin].Symbol,
-        });
-      }
-    });
-    state.typeSuggestions = randomSuggestionsList;
-    return;
-  }
 
   /**
    * @type {string[]}
@@ -209,7 +210,11 @@ const updateSuggestions = (tickerName, findRandom) => {
 watch(
   () => state.tickerInput,
   (value) => {
-    updateSuggestions(value);
+    if (value) {
+      updateSuggestions(value);
+    } else {
+      getRandomSuggestions();
+    }
   }
 );
 
@@ -276,7 +281,7 @@ function addFromSuggestion(tickerName, isAdded = false) {
   store.fetchTikersData(tickerName);
   state.tickerInput = '';
 
-  updateSuggestions(state.tickerInput, true);
+  getRandomSuggestions();
 }
 
 function selectTicker(tickerName) {

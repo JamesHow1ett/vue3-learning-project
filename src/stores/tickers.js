@@ -13,15 +13,17 @@ export const useTickerStore = defineStore('ticker', {
    * @property {string} imgUrl
    */
   /**
+   * @typedef {object} Coin
+   * @property {string} Symbol
+   * @property {string} FullName
+   * @property {string} ImageUrl
+   */
+  /**
    * @returns {{
    *  tickers: Ticker[];
    *  currentTicker: Ticker | null;
    *  allCoins: {
-   *    [tickerName: string]: {
-   *      Symbol: string;
-   *      FullName: string;
-   *      ImageUrl: string;
-   *    };
+   *    [tickerName: string]: Coin
    *  } | null;
    *  allCoinsNames: string[][]
    *  loading: boolean;
@@ -46,17 +48,16 @@ export const useTickerStore = defineStore('ticker', {
     },
   },
   actions: {
+    /**
+     * Fetch all coins data
+     */
     async fetchAllCoinsList() {
       const savedAllCoins = Storage.getItem(ALL_COINS_NAMES);
 
       if (savedAllCoins) {
         /**
          * @type {{
-         *  [tickerName: string]: {
-         *    Symbol: string;
-         *    FullName: string;
-         *    ImageUrl: string;
-         *  }}
+         *  [tickerName: string]: Coin}
          * }
          */
         const parsedSavedAllCoins = JSON.parse(savedAllCoins);
