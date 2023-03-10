@@ -45,7 +45,7 @@ onMounted(async () => {
       const { page } = getPageOptions();
       const parsedPage = parseInt(page, 10);
 
-      if (parsedPage < 1 || Number.isNaN(parsedPage)) {
+      if (parsedPage < 1 || Number.isNaN(parsedPage) || filter) {
         deletePageOption('page');
         state.pagination = {
           ...DEFAULT_PAGINATION,
