@@ -8,7 +8,7 @@ export const useTickerStore = defineStore('ticker', {
    * @typedef {object} Ticker
    * @property {string} name
    * @property {string} fullName
-   * @property {number} rate
+   * @property {number | string} rate
    * @property {number[]} prices
    * @property {string} imgUrl
    */
@@ -99,21 +99,13 @@ export const useTickerStore = defineStore('ticker', {
       /**
        * @type {Ticker[]}
        */
-      const tickersList = [];
-
-      Object.keys(data).forEach((key) => {
-        /**
-         * @type {Ticker}
-         */
-        const tickerData = {
-          name: key,
-          rate: data[key].USD,
-          prices: [data[key].USD],
-          imgUrl: this.allCoins[key].ImageUrl,
-          fullName: this.allCoins[key].FullName,
-        };
-        tickersList.push(tickerData);
-      });
+      const tickersList = tickers.map((name) => ({
+        name,
+        rate: data[name]?.USD ?? '-',
+        prices: [data[name]?.USD ?? 0],
+        imgUrl: this.allCoins[name]?.ImageUrl ?? '',
+        fullName: this.allCoins[name]?.FullName ?? '',
+      }));
 
       this.tickers = tickersList;
       this.loading = false;

@@ -18,7 +18,11 @@ const emit = defineEmits(['removeTicker', 'selectTicker']);
 
 const parseTickerValue = computed(() => {
   if (!props.ticker.name) {
-    return '';
+    return '-';
+  }
+
+  if (typeof props.ticker.rate === 'string') {
+    return '-';
   }
 
   return parseTickerPrice(props.ticker.rate);
