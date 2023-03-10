@@ -4,6 +4,7 @@ import { useTickerStore } from '../../stores/tickers';
 import { MAX_GRAPH_ELEMENTS } from '../../stores/constants';
 import { parseTickerPrice } from '../../utils/utils';
 import { HALF_GRAPH_HEIGHT } from './constants';
+import { userRandomBgColor } from '../../composables/useRandomBgColor';
 
 const props = defineProps({
   ticker: {
@@ -16,18 +17,32 @@ const emit = defineEmits(['unsetTicker']);
 
 const store = useTickerStore();
 
+const { bgColor, updateColor } = userRandomBgColor();
+
 const barChart = ref(null);
 const maxValue = ref(0);
 const minValue = ref(0);
 
 const noramilizedGraph = computed(() => {
   if (maxValue.value === minValue.value) {
-    return props.ticker.prices.map(() => HALF_GRAPH_HEIGHT);
+    return props.ticker.prices.map(() => {
+      updateColor();
+
+      return {
+        price: HALF_GRAPH_HEIGHT,
+        bgColor: bgColor.value,
+      };
+    });
   }
 
-  return props.ticker.prices.map(
-    (price) => 5 + ((price - minValue.value) * 95) / (maxValue.value - minValue.value)
-  );
+  return props.ticker.prices.map((price) => {
+    updateColor();
+
+    return {
+      price: 5 + ((price - minValue.value) * 95) / (maxValue.value - minValue.value),
+      bgColor: bgColor.value,
+    };
+  });
 });
 
 function calculateMaxGraphElements() {
@@ -78,8 +93,9 @@ onBeforeMount(() => {
         <div
           v-for="(bar, idx) in noramilizedGraph"
           :key="idx"
-          :style="{ height: `${bar}%` }"
-          class="bg-purple-800 border w-10"
+          :style="{ height: `${bar.price}%` }"
+          :class="bar.bgColor"
+          class="border w-10"
         ></div>
       </transition-group>
     </div>
