@@ -16,6 +16,9 @@ const props = defineProps({
 
 const emit = defineEmits(['removeTicker', 'selectTicker']);
 
+const store = useTickerStore();
+const { currentTicker } = storeToRefs(store);
+
 const parseTickerValue = computed(() => {
   if (!props.ticker.name) {
     return '-';
@@ -28,17 +31,6 @@ const parseTickerValue = computed(() => {
   return parseTickerPrice(props.ticker.rate);
 });
 
-const store = useTickerStore();
-const { currentTicker } = storeToRefs(store);
-
-function removeTicker() {
-  emit('removeTicker', props.ticker.name);
-}
-
-function selectTicker() {
-  emit('selectTicker', props.ticker.name);
-}
-
 const isActive = computed(() => {
   if (!currentTicker.value) {
     return false;
@@ -49,6 +41,14 @@ const isActive = computed(() => {
   }
   return currentTicker.value.name === props.ticker.name;
 });
+
+function removeTicker() {
+  emit('removeTicker', props.ticker.name);
+}
+
+function selectTicker() {
+  emit('selectTicker', props.ticker.name);
+}
 </script>
 
 <template>
