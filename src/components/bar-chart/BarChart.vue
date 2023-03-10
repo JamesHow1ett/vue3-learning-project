@@ -6,6 +6,8 @@ import { parseTickerPrice } from '../../utils/utils';
 import { HALF_GRAPH_HEIGHT } from './constants';
 import { userRandomBgColor } from '../../composables/useRandomBgColor';
 
+import VButton from '../v-button/VButton.vue';
+
 const props = defineProps({
   ticker: {
     type: Object,
@@ -99,7 +101,7 @@ onBeforeMount(() => {
         ></div>
       </transition-group>
     </div>
-    <button type="button" class="absolute top-0 right-0" @click="emit('unsetTicker')">
+    <v-button type="button" class="absolute top-0 right-0" icon-button @click="emit('unsetTicker')">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -121,7 +123,7 @@ onBeforeMount(() => {
           ></path>
         </g>
       </svg>
-    </button>
+    </v-button>
   </section>
 </template>
 
