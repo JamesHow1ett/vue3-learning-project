@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { fetchTickersPrices, fetchSingleTickePrices, fetchAvailableCoinList } from '../api';
-import { setTickerList } from '../services/localStoreService';
+import { Storage, ALL_COINS_NAMES, TICKERS_STORAGE_KEY } from '../services/localStoreService';
 import { MAX_GRAPH_ELEMENTS } from './constants';
 
 export const useTickerStore = defineStore('ticker', {
@@ -47,13 +47,26 @@ export const useTickerStore = defineStore('ticker', {
   },
   actions: {
     async fetchAllCoinsList() {
+      const savedAllCoins = Storage.getItem(ALL_COINS_NAMES);
+
+      if (savedAllCoins) {
+        const parsedSavedAllCoins = JSON.parse(savedAllCoins);
+        this.allCoins = parsedSavedAllCoins;
+        this.allCoinsNames = Object.keys(parsedSavedAllCoins).map((key) => [
+          key,
+          parsedSavedAllCoins[key].FullName,
+        ]);
+        return;
+      }
+
       this.loading = true;
       const { Data } = await fetchAvailableCoinList();
-      // TODO: save to local storage
 
       this.allCoins = Data;
       this.allCoinsNames = Object.keys(Data).map((key) => [key, Data[key].FullName]);
       this.loading = false;
+
+      Storage.setItem(ALL_COINS_NAMES, this.allCoins);
     },
     /**
      * Fetch data for all added tickers
@@ -71,7 +84,7 @@ export const useTickerStore = defineStore('ticker', {
         tickers.push(...tickerName);
       }
 
-      setTickerList(tickers);
+      Storage.setArrayItem(TICKERS_STORAGE_KEY, tickers);
 
       const data = await fetchTickersPrices(tickers);
       /**
@@ -161,7 +174,10 @@ export const useTickerStore = defineStore('ticker', {
         this.currentTicker = null;
       }
 
-      setTickerList(this.tickers.map(({ name }) => name));
+      Storage.setArrayItem(
+        TICKERS_STORAGE_KEY,
+        this.tickers.map(({ name }) => name)
+      );
     },
     /**
      * Remove first price to show correct graph

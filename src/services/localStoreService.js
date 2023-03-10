@@ -1,29 +1,44 @@
-const STORAGE_KEY = 'tickers-list';
+export const TICKERS_STORAGE_KEY = 'tickers-list';
+export const ALL_COINS_NAMES = 'all-coins-names';
 
-/**
- * @returns {string[] | null}
- */
-export function getTickerList() {
-  const tickers = localStorage.getItem(STORAGE_KEY);
-
-  if (!tickers) {
-    return null;
+export class Storage {
+  /**
+   * Get item from local storage
+   * @param {string} key
+   * @returns {string | null}
+   */
+  static getItem(key) {
+    return localStorage.getItem(key);
   }
 
-  return JSON.parse(tickers);
-}
+  /**
+   * @param {string} key
+   * @param {any} value
+   * @returns {true}
+   */
+  static setItem(key, value) {
+    const stringifiedValue = JSON.stringify(value);
+    localStorage.setItem(key, stringifiedValue);
 
-/**
- *
- * @param {string[]} tickers
- */
-export function setTickerList(tickers) {
-  if (!tickers.length) {
-    localStorage.removeItem('tickers-list');
-    return;
+    return true;
   }
 
-  const tickersStringified = JSON.stringify(tickers);
+  /**
+   * Set Array item, remove item from storage if passed to set an empty array
+   * @param {string} key
+   * @param {any[]} value
+   * @returns {true}
+   */
+  static setArrayItem(key, value) {
+    if (!value.length) {
+      localStorage.removeItem(key);
+      return true;
+    }
 
-  localStorage.setItem(STORAGE_KEY, tickersStringified);
+    const stringifiedValue = JSON.stringify(value);
+
+    localStorage.setItem(key, stringifiedValue);
+
+    return true;
+  }
 }

@@ -5,7 +5,7 @@ import { useTickerStore } from './stores/tickers';
 import { fillRange, getAllPages, getRandomNumber } from './utils/utils';
 import { TIMER_DELAY, TICKERS_PER_PAGE, DEFAULT_PAGINATION } from './utils/constants';
 import { defaultTypeSuggestions } from './stores/constants';
-import { getTickerList } from './services/localStoreService';
+import { Storage, TICKERS_STORAGE_KEY } from './services/localStoreService';
 import { usePageParams } from './composables/usePageParams';
 
 import AnimatedSpinner from './components/animated-spinner/AnimatedSpinner.vue';
@@ -33,10 +33,15 @@ const { allCoins, allCoinsNames, tickers, loading, currentTicker } = storeToRefs
 onMounted(async () => {
   await store.fetchAllCoinsList();
 
-  const savedTickers = getTickerList();
+  const savedTickers = Storage.getItem(TICKERS_STORAGE_KEY);
 
   if (savedTickers) {
-    store.fetchTikersData(savedTickers).then((tickersList) => {
+    /**
+     * @type {string[]}
+     */
+    const parseSavedTickers = JSON.parse(savedTickers);
+
+    store.fetchTikersData(parseSavedTickers).then((tickersList) => {
       const { page } = getPageOptions();
       const parsedPage = parseInt(page, 10);
 
