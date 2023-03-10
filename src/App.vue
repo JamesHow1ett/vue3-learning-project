@@ -2,7 +2,7 @@
 import { onMounted, reactive, watch, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useTickerStore } from './stores/tickers';
-import { getAllPages } from './utils/utils';
+import { fillRange, getAllPages, getRandomNumber } from './utils/utils';
 import { TIMER_DELAY, TICKERS_PER_PAGE, DEFAULT_PAGINATION } from './utils/constants';
 import { defaultTypeSuggestions } from './stores/constants';
 import { getTickerList } from './services/localStoreService';
@@ -14,7 +14,7 @@ import BarChart from './components/bar-chart/BarChart.vue';
 
 const { THREE_SECONDS, FIVE_SECONDS } = TIMER_DELAY;
 
-const { updatePageOptions, getPageOptions } = usePageParams();
+const { updatePageOptions, getPageOptions, deletePageOption } = usePageParams();
 
 const { filter } = getPageOptions();
 
@@ -28,7 +28,7 @@ const state = reactive({
   pagination: { ...DEFAULT_PAGINATION },
 });
 const store = useTickerStore();
-const { allCoins, tickers, loading, currentTicker } = storeToRefs(store);
+const { allCoins, allCoinsNames, tickers, loading, currentTicker } = storeToRefs(store);
 
 onMounted(async () => {
   await store.fetchAllCoinsList();
@@ -60,11 +60,15 @@ onMounted(async () => {
           };
         }
       }
-    });
 
-    updatePageOptions(state.pagination.endIdx / TICKERS_PER_PAGE, state.filterInput);
+      updatePageOptions(state.pagination.endIdx / TICKERS_PER_PAGE, state.filterInput);
+    });
+  } else {
+    deletePageOption('page');
   }
 });
+
+const addedTickersNames = computed(() => tickers.value.map((ticker) => ticker.name));
 
 const filteredTickers = computed(() =>
   tickers.value.filter((ticker) => ticker.name.includes(state.filterInput.toUpperCase()))
@@ -115,41 +119,82 @@ watch(currentTicker, (value) => {
   }, THREE_SECONDS);
 });
 
-watch(
-  () => state.tickerInput,
-  (tickerName) => {
-    const tickerNameUpperCase = tickerName.toUpperCase();
-    const addedTicker = store.getTickerByName(tickerNameUpperCase);
-    state.errorIsTickerAdded = !!addedTicker;
+/**
+ * Show suggestions list, but not more than four suggestion
+ * @param {string} tickerName
+ * @param {boolean?} findRandom
+ */
+const updateSuggestions = (tickerName, findRandom) => {
+  const tickerNameUpperCase = tickerName.toUpperCase();
+  const addedTicker = store.getTickerByName(tickerNameUpperCase);
+  state.errorIsTickerAdded = !!addedTicker;
 
-    const allSuggestions = [];
+  if (findRandom) {
+    const maxLenth = allCoinsNames.value.length;
+    const startIdx = getRandomNumber(0, maxLenth - 4);
+    const endIdx = startIdx + 4;
 
-    Object.values(allCoins.value).forEach((coin) => {
-      if (coin.Symbol === tickerNameUpperCase) {
-        allSuggestions.push(coin);
-        return;
-      }
+    const guessSuggestions = allCoinsNames.value
+      .slice(startIdx, endIdx)
+      .map(([coinName]) => coinName);
+    const randomSuggestionsList = [];
 
-      const finded =
-        coin.Symbol.includes(tickerNameUpperCase) || coin.FullName.includes(tickerName);
+    guessSuggestions.forEach((coin) => {
+      if (addedTickersNames.value.includes(coin)) {
+        const excludeIndexes = fillRange(startIdx, endIdx);
+        const newRandomIdx = getRandomNumber(startIdx, endIdx, excludeIndexes);
+        const [[suggestions]] = allCoinsNames.value.slice(startIdx, endIdx).slice(newRandomIdx);
 
-      if (finded) {
-        allSuggestions.push(coin);
+        randomSuggestionsList.push({
+          tickerName: allCoins.value[suggestions].Symbol,
+        });
+      } else {
+        randomSuggestionsList.push({
+          tickerName: allCoins.value[coin].Symbol,
+        });
       }
     });
+    state.typeSuggestions = randomSuggestionsList;
+    return;
+  }
 
-    const exactMatch = allSuggestions.find((coin) => coin.Symbol === tickerNameUpperCase);
-    let suggestionList = [];
+  /**
+   * @type {string[]}
+   */
+  const allSuggestions = [];
 
-    if (exactMatch) {
-      suggestionList = [exactMatch, ...allSuggestions.slice(0, 3)];
-    } else {
-      suggestionList = [...allSuggestions.slice(0, 4)];
+  allCoinsNames.value.forEach(([coinName, coinFullName]) => {
+    if (coinName === tickerNameUpperCase) {
+      allSuggestions.push(coinName);
+      return;
     }
 
-    state.typeSuggestions = suggestionList.map((coin) => ({
-      tickerName: coin.Symbol,
+    const finded = coinName.includes(tickerNameUpperCase) || coinFullName.includes(tickerName);
+
+    if (finded) {
+      allSuggestions.push(coinName);
+    }
+  });
+
+  const exactMatchIdx = allSuggestions.indexOf(tickerNameUpperCase);
+
+  if (exactMatchIdx !== -1) {
+    state.typeSuggestions = [allSuggestions[exactMatchIdx], ...allSuggestions.slice(0, 3)].map(
+      (coin) => ({
+        tickerName: allCoins.value[coin].Symbol,
+      })
+    );
+  } else {
+    state.typeSuggestions = [...allSuggestions.slice(0, 4)].map((coin) => ({
+      tickerName: allCoins.value[coin].Symbol,
     }));
+  }
+};
+
+watch(
+  () => state.tickerInput,
+  (value) => {
+    updateSuggestions(value);
   }
 );
 
@@ -157,6 +202,15 @@ watch(
   () => state.filterInput,
   () => {
     state.pagination = { ...DEFAULT_PAGINATION };
+  }
+);
+
+watch(
+  () => filteredTickers.value.length,
+  (length) => {
+    if (length === 0) {
+      deletePageOption('page');
+    }
   }
 );
 
@@ -199,9 +253,15 @@ function addNewTicker() {
   state.tickerInput = '';
 }
 
-function addFromSuggestion(tickerName) {
+function addFromSuggestion(tickerName, isAdded = false) {
+  if (isAdded) {
+    return;
+  }
+
   store.fetchTikersData(tickerName);
   state.tickerInput = '';
+
+  updateSuggestions(state.tickerInput, true);
 }
 
 function selectTicker(tickerName) {
@@ -251,12 +311,18 @@ function selectTicker(tickerName) {
                 v-for="suggestion in state.typeSuggestions"
                 :key="suggestion.tickerName"
                 :class="{
-                  'cursor-not-allowed': !!store.getTickerByName(suggestion.tickerName),
-                  'opacity-25': !!store.getTickerByName(suggestion.tickerName),
-                  'text-grey-800': !!store.getTickerByName(suggestion.tickerName),
+                  '!cursor-not-allowed': !!store.getTickerByName(suggestion.tickerName),
+                  '!opacity-25': !!store.getTickerByName(suggestion.tickerName),
+                  '!text-grey-800': !!store.getTickerByName(suggestion.tickerName),
                 }"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer hover:text-purple-800"
-                @click="() => addFromSuggestion(suggestion.tickerName)"
+                @click="
+                  () =>
+                    addFromSuggestion(
+                      suggestion.tickerName,
+                      !!store.getTickerByName(suggestion.tickerName)
+                    )
+                "
               >
                 {{ suggestion.tickerName }}
               </span>

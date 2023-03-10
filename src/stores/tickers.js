@@ -23,12 +23,14 @@ export const useTickerStore = defineStore('ticker', {
    *      ImageUrl: string;
    *    };
    *  } | null;
+   *  allCoinsNames: string[][]
    *  loading: boolean;
    *  maxGraphElements: number;
    * }}
    */
   state: () => ({
     allCoins: null,
+    allCoinsNames: [],
     tickers: [],
     currentTicker: null,
     loading: false,
@@ -47,8 +49,10 @@ export const useTickerStore = defineStore('ticker', {
     async fetchAllCoinsList() {
       this.loading = true;
       const { Data } = await fetchAvailableCoinList();
+      // TODO: save to local storage
 
       this.allCoins = Data;
+      this.allCoinsNames = Object.keys(Data).map((key) => [key, Data[key].FullName]);
       this.loading = false;
     },
     /**

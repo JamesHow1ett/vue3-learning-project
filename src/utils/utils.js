@@ -25,9 +25,18 @@ export const parseTickerPrice = (price, isParseAsNumber) => {
  *
  * @param {number} min
  * @param {number} max
+ * @param {number[]} excludes
  * @returns {number}
  */
-export const gerRandomNumber = (min, max) => Math.round(Math.random() * (max - min) + min);
+export const getRandomNumber = (min, max, excludes = []) => {
+  const randomNumber = Math.round(Math.random() * (max - min) + min);
+
+  if (excludes.includes(randomNumber)) {
+    return getRandomNumber(min, max, excludes);
+  }
+
+  return randomNumber;
+};
 
 /**
  *
@@ -42,4 +51,31 @@ export const getAllPages = (tickers) => {
   }
 
   return Math.floor(tickers / TICKERS_PER_PAGE);
+};
+
+/**
+ *
+ * @param {number} start
+ * @param {number} end
+ * @returns {number[]}
+ */
+export const fillRange = (start, end) => {
+  if (start > end) {
+    return [];
+  }
+
+  if (start < 0 || end < 0) {
+    return [];
+  }
+
+  const length = start === 0 ? end - start : end - start + 1;
+  const range = new Array(length);
+  range[0] = start;
+  range[length - 1] = end;
+
+  for (let i = 1; i < length; i += 1) {
+    range[i] = start + i;
+  }
+
+  return range;
 };
