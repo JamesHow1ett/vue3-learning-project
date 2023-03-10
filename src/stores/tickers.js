@@ -50,6 +50,15 @@ export const useTickerStore = defineStore('ticker', {
       const savedAllCoins = Storage.getItem(ALL_COINS_NAMES);
 
       if (savedAllCoins) {
+        /**
+         * @type {{
+         *  [tickerName: string]: {
+         *    Symbol: string;
+         *    FullName: string;
+         *    ImageUrl: string;
+         *  }}
+         * }
+         */
         const parsedSavedAllCoins = JSON.parse(savedAllCoins);
         this.allCoins = parsedSavedAllCoins;
         this.allCoinsNames = Object.keys(parsedSavedAllCoins).map((key) => [
