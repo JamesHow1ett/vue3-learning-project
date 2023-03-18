@@ -1,4 +1,4 @@
-export const MINIMAL_INTL_NUMBER_FORMAT_VALUE = 0.001;
+export const MINIMAL_INTL_NUMBER_FORMAT_VALUE = 0.01;
 
 export const TICKERS_PER_PAGE = 6;
 

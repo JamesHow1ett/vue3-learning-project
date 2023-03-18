@@ -41,6 +41,7 @@ export const getRandomNumber = (min = 0, max = 10, excludes = []) => {
 
 /**
  * Calculate how many pages tickers will take
+ * default is 6 tickers showing on the page
  * @param {number} tickers
  * @returns {number}
  */
@@ -75,7 +76,7 @@ export const fillRange = (start, end) => {
     return [];
   }
 
-  const length = start === 0 ? end - start : end - start + 1;
+  const length = start === 0 ? end + 1 : end - start + 1;
   const range = new Array(length);
   range[0] = start;
   range[length - 1] = end;
