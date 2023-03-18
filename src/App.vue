@@ -3,24 +3,21 @@ import { onMounted, reactive, watch, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useTickerStore } from './stores/tickers';
 import { fillRange, getAllPages, getRandomNumber } from './utils/utils';
-import { TIMER_DELAY, TICKERS_PER_PAGE, DEFAULT_PAGINATION } from './utils/constants';
+import { TICKERS_PER_PAGE, DEFAULT_PAGINATION } from './utils/constants';
 import { defaultTypeSuggestions } from './stores/constants';
 import { Storage, TICKERS_STORAGE_KEY } from './services/localStoreService';
 import { usePageParams } from './composables/usePageParams';
+import { WsWorker } from './services/shared-worker/WsSharedWorker';
 
 import AnimatedSpinner from './components/animated-spinner/AnimatedSpinner.vue';
 import TickerItem from './components/ticker-item/TickerItem.vue';
 import BarChart from './components/bar-chart/BarChart.vue';
 import VButton from './components/v-button/VButton.vue';
 
-const { THREE_SECONDS, FIVE_SECONDS } = TIMER_DELAY;
-
 const { updatePageOptions, getPageOptions, deletePageOption } = usePageParams();
 
 const { filter } = getPageOptions();
 
-let intervalUpdateGraph;
-let intervalUpdateTickersData;
 const state = reactive({
   tickerInput: '',
   filterInput: filter ?? '',
@@ -31,7 +28,35 @@ const state = reactive({
 const store = useTickerStore();
 const { allCoins, allCoinsNames, tickers, loading, currentTicker } = storeToRefs(store);
 
+const broadcastChannel = new BroadcastChannel('WebSocketChannel');
+
+const broadcastHandlers = {
+  add_ticker: (payload) => store.fetchTikersData(payload.tickerName),
+  remove_ticker: (payload) => store.removeTicker(payload.tickerName),
+  update_ticker: (payload) => store.updateTickersData(payload),
+  select_ticker: (payload) => store.selectTicker(payload.tickerName),
+  unselect_ticker: () => store.unselectTicker(),
+  ws_openned: () => {
+    tickers.value.forEach(({ name }) => {
+      WsWorker.port.postMessage(['SubAdd', name]);
+    });
+  },
+};
+
+broadcastChannel.addEventListener('message', ({ data }) => {
+  const { payload, type } = data;
+
+  const handler = broadcastHandlers[type];
+
+  if (handler) {
+    handler(payload);
+  }
+});
+
 onMounted(async () => {
+  WsWorker.port.start();
+  WsWorker.port.postMessage(['start']);
+
   await store.fetchAllCoinsList();
 
   const savedTickers = Storage.getItem(TICKERS_STORAGE_KEY);
@@ -107,32 +132,6 @@ const pageOptions = computed(() => ({
   page: currentPage.value,
   filter: state.filterInput,
 }));
-
-watch(tickers, (newValue, oldValue) => {
-  if (!newValue.length) {
-    clearInterval(intervalUpdateTickersData);
-    return;
-  }
-
-  if (newValue.length !== oldValue.length) {
-    clearInterval(intervalUpdateTickersData);
-
-    intervalUpdateTickersData = setInterval(() => {
-      store.updateTickersData();
-    }, FIVE_SECONDS);
-  }
-});
-
-watch(currentTicker, (value) => {
-  if (!value) {
-    clearInterval(intervalUpdateGraph);
-    return;
-  }
-
-  intervalUpdateGraph = setInterval(() => {
-    store.graphPrices();
-  }, THREE_SECONDS);
-});
 
 /**
  * Show random suggestion
@@ -255,7 +254,12 @@ function nextPage() {
   }
 }
 
+/**
+ *
+ * @param {string} tickerName
+ */
 function removeTicker(tickerName) {
+  broadcastChannel.postMessage({ type: 'remove_ticker', payload: { tickerName } });
   store.removeTicker(tickerName);
 
   if (paginatedTickers.value.length < currentPage.value * TICKERS_PER_PAGE) {
@@ -268,6 +272,7 @@ function addNewTicker() {
     return;
   }
 
+  broadcastChannel.postMessage({ type: 'add_ticker', payload: { tickerName: state.tickerInput } });
   store.fetchTikersData(state.tickerInput);
 
   state.tickerInput = '';
@@ -278,26 +283,35 @@ function addFromSuggestion(tickerName, isAdded = false) {
     return;
   }
 
+  broadcastChannel.postMessage({ type: 'add_ticker', payload: { tickerName } });
   store.fetchTikersData(tickerName);
   state.tickerInput = '';
 
   getRandomSuggestions();
 }
 
+function handleUnselectTicker() {
+  broadcastChannel.postMessage({ type: 'unselect_ticker', payload: {} });
+  store.unselectTicker();
+}
+
+/**
+ *
+ * @param {string} tickerName
+ */
 function selectTicker(tickerName) {
   if (!tickerName || state.errorIsTickerAdded) {
     return;
   }
 
-  clearInterval(intervalUpdateGraph);
-
   if (currentTicker.value?.name === tickerName) {
-    store.unselectTicker();
+    handleUnselectTicker();
 
     return;
   }
 
   store.selectTicker(tickerName);
+  broadcastChannel.postMessage({ type: 'select_ticker', payload: { tickerName } });
 }
 </script>
 
@@ -415,7 +429,7 @@ function selectTicker(tickerName) {
         <bar-chart
           v-if="currentTicker"
           :ticker="currentTicker"
-          @unset-ticker="store.unselectTicker"
+          @unset-ticker="handleUnselectTicker"
         />
       </Transition>
     </div>

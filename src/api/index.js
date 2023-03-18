@@ -35,24 +35,6 @@ export async function fetchTickersPrices(tickersName) {
 }
 
 /**
- * Fetch data for single ticker
- * @param {string} tickerName
- * @returns {Promise<{
- *  [tickerName: string]: { USD: number }
- * }>}
- */
-export async function fetchSingleTickePrices(tickerName) {
-  const url = new URL(`${BASE_URL_REST}/price`);
-  url.searchParams.append('fsym', tickerName);
-  url.searchParams.append('tsyms', 'USD');
-  url.searchParams.append('api_key', API_KEY);
-
-  const result = await fetchData(url);
-
-  return result;
-}
-
-/**
  * Fetch all available coins
  * @returns {Promise<{
  *  Data: {

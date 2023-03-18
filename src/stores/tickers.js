@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
-import { fetchTickersPrices, fetchSingleTickePrices, fetchAvailableCoinList } from '../api';
+import { fetchTickersPrices, fetchAvailableCoinList } from '../api';
 import { Storage, ALL_COINS_NAMES, TICKERS_STORAGE_KEY } from '../services/localStoreService';
+import { WsWorker } from '../services/shared-worker/WsSharedWorker';
+
 import { MAX_GRAPH_ELEMENTS } from './constants';
 
 export const useTickerStore = defineStore('ticker', {
@@ -90,6 +92,7 @@ export const useTickerStore = defineStore('ticker', {
 
       if (typeof tickerName === 'string') {
         tickers.push(tickerName.toUpperCase());
+        WsWorker.port.postMessage(['SubAdd', tickerName]);
       } else {
         tickers.push(...tickerName);
       }
@@ -114,32 +117,26 @@ export const useTickerStore = defineStore('ticker', {
       return tickersList;
     },
     /**
-     * Update added tickers
+     * Update added tickers data
+     * @param {{
+     *  FLAGS: number;
+     *  FROMSYMBOL: string;
+     *  PRICE: number;
+     * }} wsTickerData
      */
-    async updateTickersData() {
-      if (!this.tickers.length) {
-        return;
+    async updateTickersData(wsTickerData) {
+      const ticker = this.tickers.find(({ name }) => name === wsTickerData.FROMSYMBOL);
+      if (ticker && (wsTickerData.FLAGS === 1 || wsTickerData.FLAGS === 2)) {
+        ticker.rate = wsTickerData.PRICE;
       }
 
-      const tickers = this.tickers.map(({ name }) => name);
-      const data = await fetchTickersPrices(tickers);
-
-      Object.keys(data).forEach((key) => {
-        const ticker = this.tickers.find(({ name }) => name === key);
-        ticker.rate = data[key].USD;
-      });
-    },
-    /**
-     * Update selected ticker prices
-     */
-    async graphPrices() {
       if (!this.currentTicker) {
         return;
       }
 
-      const { USD } = await fetchSingleTickePrices(this.currentTicker.name);
-
-      this.currentTicker.prices.push(USD);
+      if (wsTickerData.FLAGS === 1 || wsTickerData.FLAGS === 2) {
+        this.currentTicker.prices.push(wsTickerData.PRICE);
+      }
 
       while (this.currentTicker.prices.length > this.maxGraphElements) {
         this.shiftSelectedTickerGraph();
@@ -163,6 +160,8 @@ export const useTickerStore = defineStore('ticker', {
      * Clear selection
      */
     unselectTicker() {
+      const ticker = this.tickers.find(({ name }) => name === this.currentTicker.name);
+      ticker.prices = [ticker.rate];
       this.currentTicker = null;
     },
     /**
@@ -170,6 +169,7 @@ export const useTickerStore = defineStore('ticker', {
      * @param {string} tickerName
      */
     removeTicker(tickerName) {
+      WsWorker.port.postMessage(['SubRemove', tickerName]);
       this.tickers = this.tickers.filter(({ name }) => name !== tickerName);
 
       if (this.currentTicker?.name === tickerName) {
