@@ -23,7 +23,7 @@ export const parseTickerPrice = (price, isParseAsNumber) => {
 };
 
 /**
- * Get random number in range
+ * Get random number in a range
  * @param {number} min
  * @param {number} max
  * @param {number[]} excludes - Array of numbers to exclude from generate

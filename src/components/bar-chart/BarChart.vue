@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted, onBeforeMount, nextTick, watch } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import { useTickerStore } from '../../stores/tickers';
 import { MAX_GRAPH_ELEMENTS } from '../../stores/constants';
 import { parseTickerPrice } from '../../utils/utils';
@@ -72,17 +72,20 @@ onMounted(() => {
   window.addEventListener('resize', calculateMaxGraphElements);
 });
 
-onBeforeMount(() => {
+onBeforeUnmount(() => {
   window.removeEventListener('resize', calculateMaxGraphElements);
 });
 </script>
 
 <template>
   <section class="relative flex py-4 mt-6">
-    <h3 class="absolute text-lg leading-6 font-medium text-gray-900 -top-4">
+    <h3
+      class="absolute text-lg leading-6 font-medium text-gray-900 -top-4"
+      data-testid="chart-name"
+    >
       {{ ticker.fullName }} - USD
     </h3>
-    <div class="flex flex-col justify-between mr-2">
+    <div class="flex flex-col justify-between mr-2" data-testid="chart-legend">
       <div class="text-[0.7rem]">
         {{ parseTickerPrice(maxValue, true) }}
       </div>
@@ -90,7 +93,11 @@ onBeforeMount(() => {
         {{ parseTickerPrice(minValue, true) }}
       </div>
     </div>
-    <div ref="barChart" class="flex items-end border-gray-600 border-b border-l w-[95%] h-64">
+    <div
+      ref="barChart"
+      class="flex items-end border-gray-600 border-b border-l w-[95%] h-64"
+      data-testid="graph"
+    >
       <transition-group name="graph">
         <div
           v-for="(bar, idx) in noramilizedGraph"
@@ -98,10 +105,17 @@ onBeforeMount(() => {
           :style="{ height: `${bar.price}%` }"
           :class="bar.bgColor"
           class="border w-10"
+          data-testid="bar"
         ></div>
       </transition-group>
     </div>
-    <v-button type="button" class="absolute top-0 right-0" icon-button @click="emit('unsetTicker')">
+    <v-button
+      type="button"
+      class="absolute top-0 right-0"
+      icon-button
+      data-testid="close-chart-btn"
+      @click="emit('unsetTicker')"
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         xmlns:xlink="http://www.w3.org/1999/xlink"

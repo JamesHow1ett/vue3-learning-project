@@ -19,7 +19,7 @@ const emit = defineEmits(['removeTicker', 'selectTicker']);
 const store = useTickerStore();
 const { currentTicker } = storeToRefs(store);
 
-const parseTickerValue = computed(() => {
+const parsedPrice = computed(() => {
   if (!props.ticker.name) {
     return '-';
   }
@@ -39,14 +39,23 @@ const isActive = computed(() => {
   if (!props.ticker.name) {
     return false;
   }
+
   return currentTicker.value.name === props.ticker.name;
 });
 
 function removeTicker() {
+  if (!props.ticker.name) {
+    return;
+  }
+
   emit('removeTicker', props.ticker.name);
 }
 
 function selectTicker() {
+  if (!props.ticker.name) {
+    return;
+  }
+
   emit('selectTicker', props.ticker.name);
 }
 </script>
@@ -56,9 +65,9 @@ function selectTicker() {
     class="bg-white overflow-hidden shadow rounded-lg border-4 border-solid cursor-pointer"
     :class="{ 'border-purple-800': isActive }"
   >
-    <div class="px-4 py-5 sm:p-6 text-center" @click="selectTicker">
+    <div class="px-4 py-5 sm:p-6 text-center" data-testid="ticker-body" @click="selectTicker">
       <dt class="text-sm font-medium text-gray-500 truncate">
-        <div class="flex justify-center items-center gap-1">
+        <div class="flex justify-center items-center gap-1" data-testid="ticker-info">
           {{ ticker.name }}
           <img
             :src="`https://www.cryptocompare.com/${ticker.imgUrl}`"
@@ -67,14 +76,15 @@ function selectTicker() {
           />
         </div>
       </dt>
-      <dd class="mt-1 text-3xl font-semibold text-gray-900">
-        {{ parseTickerValue }}
+      <dd class="mt-1 text-3xl font-semibold text-gray-900" data-testid="ticker-price">
+        {{ parsedPrice }}
       </dd>
     </div>
     <div class="w-full border-t border-gray-200"></div>
     <v-button
       icon-button
       class="group flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-purple-800 hover:bg-gray-200 transition-all focus:outline-none"
+      data-testid="remove-btn"
       @click="removeTicker"
     >
       <template #append-icon>

@@ -18,6 +18,12 @@ describe('Utils', () => {
 
       expect(result).toBe(expected);
     });
+
+    test('should parse number to currency view', () => {
+      const result = parseTickerPrice(0.342, true);
+
+      expect(result).toBe('$0.34');
+    });
   });
 
   describe('getRandomNumber', () => {

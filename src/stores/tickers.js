@@ -5,6 +5,15 @@ import { WsWorker } from '../services/shared-worker/WsSharedWorker';
 
 import { MAX_GRAPH_ELEMENTS } from './constants';
 
+export const initialState = {
+  allCoins: null,
+  allCoinsNames: [],
+  tickers: [],
+  currentTicker: null,
+  loading: false,
+  maxGraphElements: MAX_GRAPH_ELEMENTS,
+};
+
 export const useTickerStore = defineStore('ticker', {
   /**
    * @typedef {object} Ticker
@@ -33,12 +42,7 @@ export const useTickerStore = defineStore('ticker', {
    * }}
    */
   state: () => ({
-    allCoins: null,
-    allCoinsNames: [],
-    tickers: [],
-    currentTicker: null,
-    loading: false,
-    maxGraphElements: MAX_GRAPH_ELEMENTS,
+    ...initialState,
   }),
   getters: {
     getTickerByName(state) {
