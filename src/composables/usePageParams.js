@@ -4,10 +4,10 @@ import { unref } from 'vue';
  *
  * @returns {{
  *  getPageOptions: () => {
- *  page: string;
- *  filter: string;
+ *  page: string | null;
+ *  filter: string | null;
  * };
- *  updatePageOptions: () => void;
+ *  updatePageOptions: (currentPage: import('vue').Ref<number> | number, currentFilter: import('vue').Ref<string> | string) => void;
  *  deletePageOption: (optionName: string) => void;
  * }}
  */
@@ -35,7 +35,7 @@ export function usePageParams() {
     const filter = unref(currentFilter);
 
     if (parseInt(page, 10)) {
-      searchParams.set('page', page);
+      searchParams.set('page', page.toString());
     }
 
     if (filter) {
@@ -47,6 +47,13 @@ export function usePageParams() {
     setPageParams();
   }
 
+  /**
+   * 
+   * @returns {{
+   *  page: string | null;
+   *  filter: string | null;
+   * }}
+   */
   function getPageOptions() {
     return {
       page: searchParams.get('page'),

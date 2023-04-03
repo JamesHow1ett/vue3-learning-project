@@ -1,7 +1,7 @@
 import { ref, onMounted } from 'vue';
 import { getRandomNumber } from '../utils/utils';
 
-const COLOR_MAP = {
+export const COLOR_MAP = {
   'color-1': 'bg-purple-800',
   'color-2': 'bg-amber-700',
   'color-3': 'bg-cyan-600',
@@ -14,8 +14,7 @@ export function userRandomBgColor() {
 
   function updateColor() {
     const randomNumber = getRandomNumber(1, 5);
-    const color = COLOR_MAP[`color-${randomNumber}`];
-    bgColor.value = color;
+    bgColor.value = COLOR_MAP[`color-${randomNumber}`];
   }
 
   onMounted(() => {

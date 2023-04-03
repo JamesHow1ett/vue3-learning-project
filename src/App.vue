@@ -118,9 +118,7 @@ const paginatedTickers = computed(() =>
   filteredTickers.value.slice(state.pagination.startIdx, state.pagination.endIdx)
 );
 
-const currentPage = computed(() => {
-  return state.pagination.endIdx / TICKERS_PER_PAGE;
-});
+const currentPage = computed(() => state.pagination.endIdx / TICKERS_PER_PAGE);
 
 const allPages = computed(() => getAllPages(tickers.value.length));
 
@@ -136,7 +134,7 @@ const pageOptions = computed(() => ({
 /**
  * Show random suggestion
  */
-const getRandomSuggestions = () => {
+function getRandomSuggestions() {
   const maxLenth = allCoinsNames.value.length;
   const startIdx = getRandomNumber(0, maxLenth - 4);
   const endIdx = startIdx + 4;
@@ -162,13 +160,13 @@ const getRandomSuggestions = () => {
     }
   });
   state.typeSuggestions = randomSuggestionsList;
-};
+}
 
 /**
  * Show suggestions list, but not more than four suggestion
  * @param {string} tickerName
  */
-const updateSuggestions = (tickerName) => {
+function updateSuggestions(tickerName) {
   const tickerNameUpperCase = tickerName.toUpperCase();
   const addedTicker = store.getTickerByName(tickerNameUpperCase);
   state.errorIsTickerAdded = !!addedTicker;
@@ -204,7 +202,7 @@ const updateSuggestions = (tickerName) => {
       tickerName: allCoins.value[coin].Symbol,
     }));
   }
-};
+}
 
 watch(
   () => state.tickerInput,

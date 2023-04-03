@@ -6,7 +6,7 @@ import { MINIMAL_INTL_NUMBER_FORMAT_VALUE, TICKERS_PER_PAGE } from './constants'
  * @param {boolean} [isParseAsNumber=false]
  * @returns {string} Parsed price to the human view
  */
-export const parseTickerPrice = (price, isParseAsNumber) => {
+export function parseTickerPrice(price, isParseAsNumber) {
   if (price < MINIMAL_INTL_NUMBER_FORMAT_VALUE) {
     return `$${price.toPrecision(1)}`;
   }
@@ -20,7 +20,7 @@ export const parseTickerPrice = (price, isParseAsNumber) => {
   }
 
   return formatter.format(price);
-};
+}
 
 /**
  * Get random number in a range
@@ -29,7 +29,7 @@ export const parseTickerPrice = (price, isParseAsNumber) => {
  * @param {number[]} excludes - Array of numbers to exclude from generate
  * @returns {number} Default return random number in range from 0 to 10
  */
-export const getRandomNumber = (min = 0, max = 10, excludes = []) => {
+export function getRandomNumber(min = 0, max = 10, excludes = []) {
   const randomNumber = Math.round(Math.random() * (max - min) + min);
 
   if (excludes.includes(randomNumber)) {
@@ -37,7 +37,7 @@ export const getRandomNumber = (min = 0, max = 10, excludes = []) => {
   }
 
   return randomNumber;
-};
+}
 
 /**
  * Calculate how many pages tickers will take
@@ -45,7 +45,7 @@ export const getRandomNumber = (min = 0, max = 10, excludes = []) => {
  * @param {number} tickers
  * @returns {number}
  */
-export const getAllPages = (tickers) => {
+export function getAllPages(tickers) {
   const hasRemainderOfDivision = tickers % TICKERS_PER_PAGE > 0;
 
   if (hasRemainderOfDivision) {
@@ -53,7 +53,7 @@ export const getAllPages = (tickers) => {
   }
 
   return Math.floor(tickers / TICKERS_PER_PAGE);
-};
+}
 
 /**
  * Fill array with numbers from start to end
@@ -67,7 +67,7 @@ export const getAllPages = (tickers) => {
  * fillRange(-1, 2) => []
  * fillRange(2, 1) => []
  */
-export const fillRange = (start, end) => {
+export function fillRange(start, end) {
   if (start > end) {
     return [];
   }
@@ -86,4 +86,4 @@ export const fillRange = (start, end) => {
   }
 
   return range;
-};
+}

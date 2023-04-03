@@ -27,12 +27,12 @@ export class Storage {
    * Set Array item, remove item from storage if passed to set an empty array
    * @param {string} key
    * @param {any[]} value
-   * @returns {true}
+   * @returns {boolean}
    */
   static setArrayItem(key, value) {
     if (!value.length) {
       localStorage.removeItem(key);
-      return true;
+      return false;
     }
 
     const stringifiedValue = JSON.stringify(value);
